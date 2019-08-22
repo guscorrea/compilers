@@ -2,9 +2,8 @@
 // Created by I861082 on 21/08/2019.
 //
 
+#include <string.h>
 #include "hash.h"
-#include "../../../../AppData/Local/Packages/CanonicalGroupLimited.UbuntuonWindows_79rhkp1fndgsc/LocalState/rootfs/usr/include/string.h"
-#include "../../../../AppData/Local/Packages/CanonicalGroupLimited.UbuntuonWindows_79rhkp1fndgsc/LocalState/rootfs/usr/include/stdlib.h"
 
 HASH_NODE*Table[HASH_SIZE];
 
