@@ -1,6 +1,7 @@
 %{
    #include "tokens.h"
    #include "hash.c"
+   #include "main.c"
    int lc=0;
    int running=1;
 %}
