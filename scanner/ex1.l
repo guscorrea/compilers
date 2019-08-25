@@ -1,6 +1,6 @@
 %{
-   #include "tokens.h"
-   #include "hash.c"
+   #include "scanner/tokens.h"
+   #include "hash/hash.c"
    int lc=0;
    int running=1;
 %}
