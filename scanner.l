@@ -1,6 +1,6 @@
 %{
-   #include "scanner/tokens.h"
-   #include "hash/hash.c"
+   #include "tokens.h"
+   #include "hash.c"
    int lc=0;
    int running=1;
 %}
@@ -52,5 +52,9 @@ DIGIT [0-9]
 int yywrap(){
     running = 0;
     return 1;
+}
+
+void initMe(){
+hashInit();
 }
 
