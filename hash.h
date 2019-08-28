@@ -24,4 +24,3 @@ void hashInit(void);
 HASH_NODE *hashFind(char *text);
 HASH_NODE *hashInsert(char *text);
 int hashAddress(char *text);
-void hashPrint(void);

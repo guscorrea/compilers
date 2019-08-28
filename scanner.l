@@ -1,6 +1,7 @@
 %{
    #include "tokens.h"
    #include "hash.c"
+   #include "main.c"
    int lc=0;
    int running=1;
 %}
@@ -29,7 +30,7 @@ DIGIT [0-9]
 "."{DIGIT}+ {return LIT_FLOAT;}
 ","|";"|":"|"("|")"|"["|"]"|"{"|"}"|"+"|"-"|"*"|"/"|"<"|">"|"="|"v"|"."|"~"|"&"|"$"|"#" {return yytext[0];}
 "'"."'" {return LIT_CHAR;}
-[A-Za-z_][A-Za-z_0-9]* {hashInsert(yytext);}
+[A-Za-z_][A-Za-z_0-9]* {hashInsert(yytext); return TK_IDENTIFIER;}
 "<=" {return OPERATOR_LE;}
 ">=" {return OPERATOR_GE;}
 "==" {return OPERATOR_EQ;}
@@ -54,3 +55,13 @@ int yywrap(){
     return 1;
 }
 
+void initMe(){
+hashInit();
+}
+
+int isRunning(void){
+  return running;
+}
+int getLineNumber(void){
+  return lc+1;
+}

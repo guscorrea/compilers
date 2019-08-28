@@ -1,12 +1,15 @@
 #include <stdio.h>
-#include "hash/hash.h"
 extern int yylex();
 extern int lc;
 extern int running;
 
+void initMe(void);
+int getLineNumber(void);
+int isRunning(void);
+
 int main(void)
-{ 
-  hashInit();
+{
+  initMe();
   int tok;
   while(running){
   tok=yylex();
@@ -15,12 +18,6 @@ int main(void)
   }
   fprintf(stderr,"Found keyword %i\n",tok);
   }
-  printf("The line number is: %d\n",lc);
+  printf("The line number is: %d\n", getLineNumber());
   return 0;
-}
-int isRunning(void){
-  return !running;
-}
-int getLineNumber(void){
-  return lc+1;
 }

@@ -34,6 +34,6 @@ HASH_NODE *hashInsert(char *text) {
     strcpy(newnode->text, text);
     newnode->next = Table[address];
     Table[address] = newnode;
+    printf("Identifier inserted in hash: %d , %s \n", newnode->type, newnode->text);
     return newnode;
 }
-HASH_NODE *hashFind(char *text);

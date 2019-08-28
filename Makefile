@@ -1,5 +1,7 @@
-all: main.c scanner/ex1.l
-	./myscanner < teste.txt
-myscanner: main.c ex1.l
-	lex ex1.l
-	gcc main.c lex.yy.c -o myscanner 
+etapa1: lex.yy.c
+	gcc lex.yy.c -o etapa1
+lex.yy.c: scanner.l
+	lex scanner.l
+
+clean:
+	rm lex.yy.c etapa1
