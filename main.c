@@ -21,9 +21,3 @@ int main(void)
   printf("The line number is: %d\n", getLineNumber());
   return 0;
 }
-int isRunning(void){
-  return !running;
-}
-int getLineNumber(void){
-  return lc+1;
-}

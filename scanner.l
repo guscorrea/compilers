@@ -30,7 +30,7 @@ DIGIT [0-9]
 "."{DIGIT}+ {return LIT_FLOAT;}
 ","|";"|":"|"("|")"|"["|"]"|"{"|"}"|"+"|"-"|"*"|"/"|"<"|">"|"="|"v"|"."|"~"|"&"|"$"|"#" {return yytext[0];}
 "'"."'" {return LIT_CHAR;}
-[A-Za-z_][A-Za-z_0-9]* {hashInsert(yytext);}
+[A-Za-z_][A-Za-z_0-9]* {hashInsert(yytext); return TK_IDENTIFIER;}
 "<=" {return OPERATOR_LE;}
 ">=" {return OPERATOR_GE;}
 "==" {return OPERATOR_EQ;}
@@ -59,3 +59,9 @@ void initMe(){
 hashInit();
 }
 
+int isRunning(void){
+  return running;
+}
+int getLineNumber(void){
+  return lc+1;
+}
