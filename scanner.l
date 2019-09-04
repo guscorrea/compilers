@@ -2,6 +2,7 @@
    #include "tokens.h"
    #include "hash.c"
    #include "main.c"
+   #include "y.tab.c"
    int lc=0;
    int running=1;
 %}
@@ -65,3 +66,6 @@ int isRunning(void){
 int getLineNumber(void){
   return lc+1;
 }
+
+
+
