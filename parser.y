@@ -4,35 +4,37 @@
 #include <stdlib.h>
 %}
 
-#token KW_BYTE
-#token KW_INT
-#token KW_LONG
-#token KW_FLOAT
-#token KW_BOOL
+%token KW_BYTE       256
+%token KW_INT        257
+%token KW_LONG       258
+%token KW_FLOAT      259
+%token KW_BOOL       260
 
-#token KW_IF
-#token KW_THEN
-#token KW_ELSE
-#token KW_WHILE
-#token KW_FOR
-#token KW_READ
-#token KW_PRINT
-#token KW_RETURN
-#token KW_BREAK
+%token KW_IF         261
+%token KW_THEN       262
+%token KW_ELSE       263
+%token KW_WHILE      264
+%token KW_FOR        265
+%token KW_READ       266
+%token KW_PRINT      267
+%token KW_RETURN     268
+%token KW_BREAK      269
 
-#token OPERATOR_LE
-#token OPERATOR_GE
-#token OPERATOR_EQ
-#token OPERATOR_DIF
+%token OPERATOR_LE   270
+%token OPERATOR_GE   271
+%token OPERATOR_EQ   272
+%token OPERATOR_DIF  273
 
-#token TK_IDENTIFIER
+%token TK_IDENTIFIER 280
 
-#token LIT_INTEGER
-#token LIT_FLOAT
-#token LIT_TRUE
-#token LIT_FALSE
-#token LIT_CHAR
-#token LIT_STRING
+%token LIT_INTEGER   281
+%token LIT_FLOAT     282
+%token LIT_TRUE      283
+%token LIT_FALSE     284
+%token LIT_CHAR      285
+%token LIT_STRING    286
+
+%token TOKEN_ERROR   290
 
 
 
