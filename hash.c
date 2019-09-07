@@ -34,6 +34,13 @@ HASH_NODE *hashInsert(char *text) {
     strcpy(newnode->text, text);
     newnode->next = Table[address];
     Table[address] = newnode;
-    printf("Identifier inserted in hash: %d , %s \n", newnode->type, newnode->text);
     return newnode;
+}
+
+void hashPrint(void){
+    int index;
+    HASH_NODE* currentNode;
+    for(index = 0; index < HASH_SIZE; index++)
+        for(currentNode = Table[index]; currentNode; currentNode = currentNode->next)
+            printf("Hash <%d, %s> \t Addr: %p \n", index, currentNode->text, currentNode);
 }

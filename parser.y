@@ -40,34 +40,73 @@
 
 %%
 
-programa: programa def
-    |
+programa: defvet programa | def programa | fundec programa | 
     ;
 
-
-def: KW_INT TK_IDENTIFIER '=' LIT_INTEGER
+defvet: tipo TK_IDENTIFIER '[' LIT_INTEGER ']' atrivet ';'
+  ;
+atrivet: ':' seqlit |
+;
+seqlit: lit seqlit |  
+;
+def: tipo TK_IDENTIFIER '=' lit ';'
         ;
-
+tipo: KW_INT | KW_BYTE | KW_LONG | KW_FLOAT | KW_BOOL 
+;
+lit:  LIT_INTEGER  | LIT_FLOAT | LIT_CHAR | LIT_TRUE | LIT_FALSE
+;
+fundec: tipo TK_IDENTIFIER '(' parlist ')' body
+    ;
+parlist: par resto
+|
+;
+resto: ',' par resto
+|
+;
+par: tipo TK_IDENTIFIER
+;
 decl: vardec | fundec
     ;
 
 vardec: KW_INT TK_IDENTIFIER ';' LIT_INTEGER
     ;
 
-fundec: KW_INT TK_IDENTIFIER '(' ')' body
-    ;
-
-body: cmd body
-    |
-    ;
-
-cmd: TK_IDENTIFIER '=' LIT_FLOAT
+body: '{' ibody '}'
 ;
-
-
+ibody:cmd ';' ibody
+    | cmd | 
+;
+cmd: TK_IDENTIFIER '=' exp | TK_IDENTIFIER '[' exp ']' '=' exp | KW_READ TK_IDENTIFIER | print 
+| return | body | if | ifelse | while | break 
+;
+print: KW_PRINT expprint
+;
+expprint: LIT_STRING expprint | exp expprint | exp | LIT_STRING
+;
+return: KW_RETURN exp
+;
+exp:  exp bi exp  | uno exp | folha | '(' exp ')' 
+;
+folha: TK_IDENTIFIER |  TK_IDENTIFIER '[' exp ']' | LIT_TRUE | LIT_FALSE | LIT_FLOAT 
+| LIT_INTEGER | LIT_CHAR | TK_IDENTIFIER '(' funcpar ')'
+;
+funcpar: exp ',' funcpar | exp | 
+;
+bi:'+'|'-'|'*'|'/'|'<'|'>'|'.'|'v'| OPERATOR_LE | OPERATOR_GE | OPERATOR_EQ | OPERATOR_DIF
+;
+uno:'~'
+;
+if: KW_IF '(' exp  ')' KW_THEN cmd
+;
+ifelse: KW_IF '(' exp ')' KW_THEN cmd KW_ELSE cmd 
+;
+while: KW_WHILE '(' exp ')' cmd 
+;
+break: KW_BREAK
+;
 %%
 
 int yyerror(char *msg) {
-fprintf(stderr, "Deu erro de sintaxe!\n");
+fprintf(stderr, "Deu erro de sintaxe na linha %d!\n",getLineNumber());
 exit(3);
 }
