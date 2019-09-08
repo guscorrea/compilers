@@ -67,8 +67,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+int yyerror(char *msg);
+int getLineNumber(void);
 
-#line 72 "y.tab.c" /* yacc.c:339  */
+#line 74 "y.tab.c" /* yacc.c:339  */
 
 # ifndef YY_NULLPTR
 #  if defined __cplusplus && 201103L <= __cplusplus
@@ -172,7 +174,7 @@ int yyparse (void);
 
 /* Copy the second part of user declarations.  */
 
-#line 176 "y.tab.c" /* yacc.c:358  */
+#line 178 "y.tab.c" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -473,15 +475,15 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,    43,    43,    43,    43,    43,    46,    48,    48,    50,
-      50,    52,    54,    54,    54,    54,    54,    56,    56,    56,
-      56,    56,    58,    60,    61,    63,    64,    66,    74,    76,
-      77,    77,    79,    79,    79,    79,    80,    80,    80,    80,
-      80,    80,    80,    82,    84,    84,    84,    84,    86,    88,
-      88,    88,    88,    90,    90,    90,    90,    90,    91,    91,
-      91,    93,    93,    93,    95,    95,    95,    95,    95,    95,
-      95,    95,    95,    95,    95,    95,    97,    99,   101,   103,
-     105
+       0,    45,    45,    45,    45,    45,    48,    50,    50,    52,
+      52,    54,    56,    56,    56,    56,    56,    58,    58,    58,
+      58,    58,    60,    62,    63,    65,    66,    68,    76,    78,
+      79,    79,    81,    81,    81,    81,    82,    82,    82,    82,
+      82,    82,    82,    84,    86,    86,    86,    86,    88,    90,
+      90,    90,    90,    92,    92,    92,    92,    92,    93,    93,
+      93,    95,    95,    95,    97,    97,    97,    97,    97,    97,
+      97,    97,    97,    97,    97,    97,    99,   101,   103,   105,
+     107
 };
 #endif
 
@@ -1364,7 +1366,7 @@ yyreduce:
   switch (yyn)
     {
       
-#line 1368 "y.tab.c" /* yacc.c:1646  */
+#line 1370 "y.tab.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -1592,7 +1594,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 107 "parser.y" /* yacc.c:1906  */
+#line 109 "parser.y" /* yacc.c:1906  */
 
 
 int yyerror(char *msg) {

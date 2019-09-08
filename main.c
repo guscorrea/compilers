@@ -1,5 +1,9 @@
 #include <stdio.h>
 
+void initMe(void);
+void hashPrint(void);
+int yyparse(void);
+
 int main(int argc, char** argv)
 {
     int tok;

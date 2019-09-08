@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+int yyerror(char *msg);
+int getLineNumber(void);
 %}
 
 %token KW_BYTE       256
