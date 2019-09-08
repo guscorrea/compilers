@@ -77,7 +77,7 @@ ibody:cmd ';' ibody
     | cmd | 
 ;
 cmd: TK_IDENTIFIER '=' exp | TK_IDENTIFIER '[' exp ']' '=' exp | KW_READ TK_IDENTIFIER | print 
-| return | body | if | ifelse | while | break 
+| return | body | if | ifelse | while | break |
 ;
 print: KW_PRINT expprint
 ;
