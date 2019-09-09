@@ -67,11 +67,6 @@ resto: ',' par resto
 ;
 par: tipo TK_IDENTIFIER
 ;
-decl: vardec | fundec
-    ;
-
-vardec: KW_INT TK_IDENTIFIER ';' LIT_INTEGER
-    ;
 
 body: '{' ibody '}'
 ;
@@ -79,7 +74,7 @@ ibody:cmd ';' ibody
     | cmd | 
 ;
 cmd: TK_IDENTIFIER '=' exp | TK_IDENTIFIER '[' exp ']' '=' exp | KW_READ TK_IDENTIFIER | print 
-| return | body | if | ifelse | while | break |
+| return | body | if | ifelse | while | break | for |
 ;
 print: KW_PRINT expprint
 ;
@@ -103,6 +98,8 @@ if: KW_IF '(' exp  ')' KW_THEN cmd
 ifelse: KW_IF '(' exp ')' KW_THEN cmd KW_ELSE cmd 
 ;
 while: KW_WHILE '(' exp ')' cmd 
+;
+for: KW_FOR '(' TK_IDENTIFIER ':' exp ',' exp ',' exp ')' cmd
 ;
 break: KW_BREAK
 ;

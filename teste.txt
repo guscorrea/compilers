@@ -12,7 +12,7 @@ int mat [ 10];
 int main ()
   {
   a = 5;
-  v1[1] = 55;
+  v1[a] = 55;
   print v1[55];
 
   print "Digite um numero: \n";
@@ -26,6 +26,9 @@ int main ()
 
   print "Incrementado algumas vezes a fica " a "\n";
 
+  for (l:1,10,1)
+    print ".";
+  print "\n";
 
   if (a==15) then 
     print "A=15\n";
