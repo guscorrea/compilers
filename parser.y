@@ -70,9 +70,14 @@ par: tipo TK_IDENTIFIER
 
 body: '{' ibody '}'
 ;
-ibody:cmd ';' ibody
-    | cmd | 
+
+ibody: cmd rest
 ;
+
+rest: ';' cmd rest
+|
+;
+
 cmd: TK_IDENTIFIER '=' exp | TK_IDENTIFIER '[' exp ']' '=' exp | KW_READ TK_IDENTIFIER | print 
 | return | body | if | ifelse | while | break | for |
 ;
