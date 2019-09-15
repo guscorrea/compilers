@@ -100,12 +100,16 @@ exp:  exp '+' exp
       	| exp OPERATOR_EQ exp
       	| exp OPERATOR_DIF exp
       	| '~' exp
-      	| folha
+      	| TK_IDENTIFIER
+      	|  TK_IDENTIFIER '[' exp ']'
+      	| LIT_TRUE
+      	| LIT_FALSE
+      	| LIT_FLOAT
+        | LIT_INTEGER
+        | LIT_CHAR
+        | TK_IDENTIFIER '(' funcpar ')'
       	| '(' exp ')'
         ;
-folha: TK_IDENTIFIER |  TK_IDENTIFIER '[' exp ']' | LIT_TRUE | LIT_FALSE | LIT_FLOAT 
-| LIT_INTEGER | LIT_CHAR | TK_IDENTIFIER '(' funcpar ')'
-;
 funcpar: exp ',' funcpar | exp | 
 ;
 if: KW_IF '(' exp  ')' KW_THEN cmd
