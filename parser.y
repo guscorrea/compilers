@@ -87,16 +87,26 @@ expprint: LIT_STRING expprint | exp expprint | exp | LIT_STRING
 ;
 return: KW_RETURN exp
 ;
-exp:  exp bi exp  | uno exp | folha | '(' exp ')' 
-;
+exp:  exp '+' exp
+      	| exp '-' exp
+      	| exp '*' exp
+      	| exp '/' exp
+      	| exp '<' exp
+      	| exp '>' exp
+      	| exp '.' exp
+      	| exp 'v' exp
+      	| exp OPERATOR_LE exp
+      	| exp OPERATOR_GE exp
+      	| exp OPERATOR_EQ exp
+      	| exp OPERATOR_DIF exp
+      	| '~' exp
+      	| folha
+      	| '(' exp ')'
+        ;
 folha: TK_IDENTIFIER |  TK_IDENTIFIER '[' exp ']' | LIT_TRUE | LIT_FALSE | LIT_FLOAT 
 | LIT_INTEGER | LIT_CHAR | TK_IDENTIFIER '(' funcpar ')'
 ;
 funcpar: exp ',' funcpar | exp | 
-;
-bi:'+'|'-'|'*'|'/'|'<'|'>'|'.'|'v'| OPERATOR_LE | OPERATOR_GE | OPERATOR_EQ | OPERATOR_DIF
-;
-uno:'~'
 ;
 if: KW_IF '(' exp  ')' KW_THEN cmd
 ;
