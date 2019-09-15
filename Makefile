@@ -1,8 +1,16 @@
-etapa2: lex.yy.c
-	gcc -o etapa2 lex.yy.c
+etapa3: y.tab.o lex.yy.o main.o hash.o
+	gcc -o etapa3 y.tab.o lex.yy.o main.o hash.o
+lex.yy.o: lex.yy.c
+	gcc -c lex.yy.c
+y.tab.o: y.tab.c
+	gcc -c y.tab.c
+hash.o: hash.c
+	gcc -c hash.c
+main.o: main.c
+	gcc -c main.c
 lex.yy.c: scanner.l
-	lex scanner.l
-scanner.l: parser.y
-	yacc parser.y -d
+	lex --header-file=lex.yy.h scanner.l
+y.tab.c: parser.y
+	yacc -d parser.y
 clean:
-	rm y.tab.* lex.yy.c etapa2
+	rm lex.yy.c lex.yy.h etapa3 y.tab.c y.tab.h *.o

@@ -6,6 +6,11 @@ int yyerror(char *msg);
 int getLineNumber(void);
 %}
 
+%union
+{
+    int valor;
+}
+
 %token KW_BYTE       256
 %token KW_INT        257
 %token KW_LONG       258

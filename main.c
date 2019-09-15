@@ -3,6 +3,7 @@
 void initMe(void);
 void hashPrint(void);
 int yyparse(void);
+extern FILE* yyin;
 
 int main(int argc, char** argv)
 {

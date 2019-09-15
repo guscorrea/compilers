@@ -1,8 +1,7 @@
 %{
    
-   #include "hash.c"
-   #include "main.c"
-   #include "y.tab.c"
+   #include "hash.h"
+   #include "y.tab.h"
    int lc=0;
    int running=1;
 %}
