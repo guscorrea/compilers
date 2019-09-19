@@ -1,5 +1,5 @@
-etapa3: y.tab.o lex.yy.o main.o hash.o
-	gcc -o etapa3 y.tab.o lex.yy.o main.o hash.o
+etapa3: y.tab.o lex.yy.o main.o hash.o astree.o
+	gcc -o etapa3 y.tab.o lex.yy.o main.o hash.o astree.o
 lex.yy.o: lex.yy.c
 	gcc -c lex.yy.c
 y.tab.o: y.tab.c
@@ -8,6 +8,8 @@ hash.o: hash.c
 	gcc -c hash.c
 main.o: main.c
 	gcc -c main.c
+astree.o: astree.c
+	gcc -c astree.c
 lex.yy.c: scanner.l
 	lex --header-file=lex.yy.h scanner.l
 y.tab.c: parser.y

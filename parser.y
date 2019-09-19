@@ -2,13 +2,14 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "astree.h"
 int yyerror(char *msg);
 int getLineNumber(void);
 %}
 
 %union
 {
-    int valor;
+    HASH_NODE *symbol;
 }
 
 %token KW_BYTE       256
