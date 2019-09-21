@@ -1,6 +1,7 @@
 %{
    
    #include "hash.h"
+   #include "astree.h"
    #include "y.tab.h"
    int lc=0;
    int running=1;

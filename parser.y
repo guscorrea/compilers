@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "lex.yy.h"
+#include "hash.h"
 #include "astree.h"
 int yyerror(char *msg);
 int getLineNumber(void);
@@ -10,6 +12,7 @@ int getLineNumber(void);
 %union
 {
     HASH_NODE *symbol;
+    AST *ast;
 }
 
 %token KW_BYTE       256
