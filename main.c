@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 void initMe(void);
 void hashPrint(void);
@@ -23,4 +24,5 @@ int main(int argc, char** argv)
 
     yyparse();
     hashPrint();
+    exit(0);
 }

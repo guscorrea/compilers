@@ -5,8 +5,6 @@
 #ifndef ETAPA1_HASH_H
 #define ETAPA1_HASH_H
 
-#endif //ETAPA1_HASH_H
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -25,3 +23,5 @@ HASH_NODE *hashFind(char *text);
 HASH_NODE *hashInsert(char *text);
 int hashAddress(char *text);
 void hashPrint(void);
+
+#endif //ETAPA1_HASH_H

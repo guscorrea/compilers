@@ -12,7 +12,7 @@ astree.o: astree.c
 	gcc -c astree.c
 lex.yy.c: scanner.l
 	lex --header-file=lex.yy.h scanner.l
-y.tab.c: parser.y
+y.tab.c: parser.y lex.yy.c
 	yacc parser.y -d
 clean:
 	rm lex.yy.c lex.yy.h etapa3 y.tab.c y.tab.h *.o
