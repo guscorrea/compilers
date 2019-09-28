@@ -21,8 +21,9 @@ int main(int argc, char** argv)
         fprintf(stderr, "Error opening file %s!\n", argv[1]);
         exit(2);
     }
-
+ 
     yyparse();
     hashPrint();
+    fprintf(stderr, " %i\n",getLineNumber());
     exit(0);
 }

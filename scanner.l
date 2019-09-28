@@ -24,29 +24,25 @@ DIGIT [0-9]
 "print" {return KW_PRINT;}
 "return" {return KW_RETURN;}
 "break" {return KW_BREAK;}
-"TRUE" {return LIT_TRUE;}
-"FALSE" {return LIT_FALSE;}
-{DIGIT}+"."{DIGIT}+ {return LIT_FLOAT;}
-{DIGIT}+"." {return LIT_FLOAT;}
-"."{DIGIT}+ {return LIT_FLOAT;}
+"TRUE" { yylval.symbol = hashInsert(yytext);return LIT_TRUE;}
+"FALSE" { yylval.symbol = hashInsert(yytext);return LIT_FALSE;}
+{DIGIT}+"."{DIGIT}+ {yylval.symbol = hashInsert(yytext);return LIT_FLOAT;}
+{DIGIT}+"." {yylval.symbol = hashInsert(yytext);return LIT_FLOAT;}
+"."{DIGIT}+ {yylval.symbol = hashInsert(yytext);return LIT_FLOAT;}
 ","|";"|":"|"("|")"|"["|"]"|"{"|"}"|"+"|"-"|"*"|"/"|"<"|">"|"="|"v"|"."|"~"|"&"|"$"|"#" {return yytext[0];}
-"'"."'" {return LIT_CHAR;}
-[A-Za-z_][A-Za-z_0-9]* {hashInsert(yytext); return TK_IDENTIFIER;}
+"'"."'" { yylval.symbol =   hashInsert(yytext);return LIT_CHAR;}
+\"(\\.|[^"])*\"	{  yylval.symbol =   hashInsert(yytext); return LIT_STRING; }
+[A-Za-z_][A-Za-z_0-9]* { yylval.symbol = hashInsert(yytext);return TK_IDENTIFIER;}
 "<=" {return OPERATOR_LE;}
 ">=" {return OPERATOR_GE;}
 "==" {return OPERATOR_EQ;}
 "!=" {return OPERATOR_DIF;}
-{DIGIT}+ {return LIT_INTEGER ;}
+{DIGIT}+ {yylval.symbol = hashInsert(yytext);return LIT_INTEGER ;}
 "//".*
 "###"            { BEGIN(C_COMMENT); }
 <C_COMMENT>"###" { BEGIN(INITIAL); }
 <C_COMMENT>.    { }
 <C_COMMENT>\n    { lc++;}
-
-["]            { BEGIN(STRING); }
-<STRING>["] { BEGIN(INITIAL);return LIT_STRING; }
-<STRING>.    { }
-<STRING>\n    { lc++;}
 \n lc++;
 [ \t\r]+ {}
 . { return TOKEN_ERROR;}
