@@ -67,7 +67,7 @@ void astreePrint(AST *node, int level, FILE *outputFile) {
         case AST_IFELSE:fprintf(outputFile, " if ( ");astreePrint(node->son[0], level+1, outputFile);fprintf(outputFile, " ) ");
         fprintf(outputFile, " then ");astreePrint(node->son[1], level+1, outputFile);
         fprintf(outputFile, " else ");astreePrint(node->son[2], level+1, outputFile);break;
-        case AST_FOR:fprintf(outputFile, " for ( ");astreePrint(node->son[0], level+1, outputFile);fprintf(outputFile, " : ");astreePrint(node->son[0], level+1, outputFile);
+        case AST_FOR:fprintf(outputFile, " for ( ");fprintf(outputFile, " %s ",node->symbol->text);fprintf(outputFile, " : ");astreePrint(node->son[0], level+1, outputFile);
         fprintf(outputFile, " , ");astreePrint(node->son[1], level+1, outputFile);
         fprintf(outputFile, " , ");astreePrint(node->son[2], level+1, outputFile);
         fprintf(outputFile, " )");astreePrint(node->son[3], level+1, outputFile);break;
