@@ -7,6 +7,9 @@
 #include "astree.h"
 int yyerror(char *msg);
 int getLineNumber(void);
+
+FILE *outputFile = NULL;
+
 %}
 
 %union
@@ -14,6 +17,7 @@ int getLineNumber(void);
     HASH_NODE *symbol;
     AST *ast;
 }
+
 %token<symbol> TK_IDENTIFIER
 %token<symbol>  LIT_TRUE 
 %token<symbol>   LIT_FALSE 
@@ -84,7 +88,7 @@ int getLineNumber(void);
 %type<ast> litint
 
 %%
-main: programa {astreePrint($1,0);}
+main: programa {astreePrint($1,0,outputFile);}
 ;
 programa: decl programa {$$ = astreeCreate(AST_DEC,0,$1,$2,0,0);}
 | {$$ = 0;}
@@ -198,6 +202,10 @@ for: KW_FOR '(' TK_IDENTIFIER ':' exp ',' exp ',' exp ')' cmd {$$ = astreeCreate
 break: KW_BREAK {$$ = astreeCreate(AST_BREAK,0,0,0,0,0);}
 ;
 %%
+
+void setOutPutFile(FILE *outputfile) {
+outputFile = outputfile;
+}
 
 int yyerror(char *msg) {
 fprintf(stderr, "Deu erro de sintaxe na linha %d!\n",getLineNumber());
