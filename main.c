@@ -29,7 +29,6 @@ int main(int argc, char** argv)
     }
  
     yyparse();
-    hashPrint();
-    fprintf(stderr, " %i\n",getLineNumber());
+    //hashPrint();
     exit(0);
 }
