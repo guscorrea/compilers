@@ -55,3 +55,19 @@ void hashPrint(void){
         for(currentNode = Table[index]; currentNode; currentNode = currentNode->next)
             printf("Hash <%d, %s> \t Addr: %p \n", index, currentNode->text, currentNode);
 }
+
+int hashCheckUndeclared(void){
+    HASH_NODE* node;
+    int errors = 0;
+
+    for(int i = 0; i < HASH_SIZE; ++i){
+        for(node = Table[i]; node; node = node->next){
+            if(node->type == SYMBOL_IDENTIFIER){
+                fprintf(stderr, "Semantic ERROR: Symbol %s undeclared.\n", node->text);
+                errors++;
+            }
+        }
+    }
+
+    return errors;
+}

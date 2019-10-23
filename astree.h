@@ -39,7 +39,7 @@
 #define AST_VARASS 27//VARIABLE ASSIGN  
 #define AST_ARRAYASS 28//ARRAY ASSIGN
 #define AST_READ 29 
-#define AST_PRINT 30 //parei aqui
+#define AST_PRINT 30
 #define AST_PRINTARRAY 31
 #define AST_RETURN 32
 #define AST_FUNCPARF 33
