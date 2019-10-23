@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "hash.h"
+#include "semantic.h"
+
 void initMe(void);
-void hashPrint(void);
 int yyparse(void);
 void setOutPutFile(FILE *outputFile);
 extern FILE* yyin;
@@ -26,9 +28,17 @@ int main(int argc, char** argv)
 
     if(outputFile = fopen(argv[2], "w")) {
         setOutPutFile(outputFile);
+    } else {
+        fprintf(stderr, "Error opening file %s!\n", argv[2]);
+        exit(2);
     }
  
     yyparse();
-    //hashPrint();
+    hashPrint();
+
+    if(getSemanticErrors() > 0)
+        exit(4);
+
+    fprintf(stderr, "Finished!\n");
     exit(0);
 }

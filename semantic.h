@@ -11,5 +11,6 @@ void checkAndSetTypes(AST*node);
 void checkUndeclared(void);
 int getSemanticErrors(void);
 int hashCheckUndeclared(void);
+void checkOperands(AST* node);
 
 #endif //ETAPA1_SEMANTIC_H
