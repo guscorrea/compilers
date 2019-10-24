@@ -13,19 +13,27 @@ int getSemanticErrors(void){
     return semanticError;
 }
 
+
+/*
+*
+*
+*
+* FUNCÕES DO SOR
+*
+*
+*
+*/
+
 void checkAndSetTypes(AST*node) {
     int i;
     if (!node) return;
 
     //take all declaration nodes
-    if(node->type == AST_VARASS
-            || node->type == AST_FUNDEC ||node->type == AST_DEFVEC)
-    {
-        if(node->symbol) {
-            if(node->symbol->type != SYMBOL_IDENTIFIER) {
+    if(node->type == AST_VARASS || node->type == AST_FUNDEC ||node->type == AST_DEFVEC){
+        if(node->symbol && node->symbol->type != SYMBOL_IDENTIFIER) {
                 fprintf(stderr, "Semantic ERROR: Symbol %s already declared. \n", node->symbol->text);
                 semanticError++;
-            }
+        }
 
             //set the correct type (nature)
             if(node->type == AST_DEF)
@@ -47,12 +55,170 @@ void checkAndSetTypes(AST*node) {
             if(node->son[0]->type=AST_TBYTE)
                 node->symbol->datatype = DATATYPE_BYTE;
         }
-    }
 
     for (int i = 0; i < MAX_SONS; ++i) {
         checkAndSetTypes(node->son[i]);
     }
 }
+
+void checkOperands(AST* node){
+    switch(node->type) {
+        case AST_SYMBOL:
+            if((node->symbol->type == SYMBOL_FUNCTION|| node->symbol->type == SYMBOL_VECTOR)){
+                error();
+            }
+        case AST_VECREAD:
+            if((node->symbol->type == SYMBOL_FUNCTION|| node->symbol->type == SYMBOL_VECTOR)){
+                error();
+            }
+            if(isBoolean(node->son[0])){//indice é boleano erro
+                error();
+            }
+        case AST_VARASS:
+            if((node->symbol->type == SYMBOL_FUNCTION|| node->symbol->type == SYMBOL_VECTOR)){
+                error();
+            }
+            if (isARITMETHICS(node->son[0])){//checa se da o tipo correto no caso aritimetico
+                if(node->symbol->datatype==DATATYPE_BOOL){
+                    error();
+                }
+            }
+            if (isBoolean(node->son[0])){//checa se da o tipo correto no caso booleano
+                if(node->symbol->datatype==DATATYPE_INT||
+                   node->symbol->datatype==DATATYPE_FLOAT||
+                   node->symbol->datatype==DATATYPE_LONG||
+                   node->symbol->datatype==DATATYPE_BYTE){
+                    error();
+                }
+            }
+        case AST_ARRAYASS:
+            if((node->symbol->type == SYMBOL_FUNCTION|| node->symbol->type == SYMBOL_VECTOR)){
+                error();
+            }
+            if(isBoolean(node->son[0])){//indice é boleano erro
+                error();
+            }
+            if (isARITMETHICS(node->son[1])){//checa se da o tipo correto no caso aritimetico
+                if(node->symbol->datatype==DATATYPE_BOOL){
+                    error();
+                }
+            }
+            if (isBoolean(node->son[1])){//checa se da o tipo correto no caso booleano
+                if(node->symbol->datatype==DATATYPE_INT||
+                   node->symbol->datatype==DATATYPE_FLOAT||
+                   node->symbol->datatype==DATATYPE_LONG||
+                   node->symbol->datatype==DATATYPE_BYTE){
+                    error();
+                }
+            }
+        case AST_ADD:
+            for(int i=0;i<2;i++){
+                if(isBoolean(node->son[i])){
+                    error();
+                }
+            }
+        case AST_MIN:
+            for(int i=0;i<2;i++){
+                if(isBoolean(node->son[i])){
+                    error();
+                }
+            }
+        case AST_MUL:
+            for(int i=0;i<2;i++){
+                if(isBoolean(node->son[i])){
+                    error();
+                }
+            }
+        case AST_DIV: // deixei quieto para deixar o exemplo do sor ,depois muda
+            for (int i = 0; i < 2; i++) {
+                if (node->son[i]->type == AST_ADD ||
+                    node->son[i]->type == AST_DIF ||
+                    node->son[i]->type == AST_MUL ||
+                    node->son[i]->type == AST_DIV ||
+
+                    (node->son[i]->type == AST_SYMBOL &&
+                     node->son[i]->symbol->type == SYMBOL_SCALAR &&
+                     node->son[i]->symbol->datatype != DATATYPE_BOOL) ||
+
+                    (node->son[i]->type == AST_SYMBOL &&
+                     (node->son[i]->symbol->type == SYMBOL_LITINT ||
+                      node->son[i]->symbol->type == SYMBOL_LITREAL)));
+                else {
+                    fprintf(stderr,
+                            "Semantic ERROR: Operands not compatible.\n");
+                    semanticError++;
+                }
+            }
+        case AST_LENE://comeca booleanas
+            for(int i=0;i<2;i++){
+                if(isARITMETHICS(node->son[i])){
+                    error();
+                }
+            }
+        case AST_GENE:
+            for(int i=0;i<2;i++){
+                if(isARITMETHICS(node->son[i])){
+                    error();
+                }
+            }
+        case AST_AND:
+            for(int i=0;i<2;i++){
+                if(isARITMETHICS(node->son[i])){
+                    error();
+                }
+            }
+        case AST_OR:
+            for(int i=0;i<2;i++){
+                if(isARITMETHICS(node->son[i])){
+                    error();
+                }
+            }
+        case AST_LE:
+            for(int i=0;i<2;i++){
+                if(isARITMETHICS(node->son[i])){
+                    error();
+                }
+            }
+        case AST_GE:
+            for(int i=0;i<2;i++){
+                if(isARITMETHICS(node->son[i])){
+                    error();
+                }
+            }
+        case AST_EQ:
+            for(int i=0;i<2;i++){
+                if(isARITMETHICS(node->son[i])){
+                    error();
+                }
+            }
+        case AST_DIF:
+            for(int i=0;i<2;i++){
+                if(isARITMETHICS(node->son[i])){
+                    error();
+                }
+            }
+        case AST_NOT:
+            if(isARITMETHICS(node->son[0])){
+                error();
+            }
+        case AST_FUNC:
+            break;
+    }
+
+    for(int i = 0; i < MAX_SONS; i++)
+        checkOperands(node->son[i]);
+}
+
+/*
+ *
+ *
+ *
+ * FUNCÕES DO SOR
+ *
+ *
+ *
+ */
+
 int isARITMETHICS(AST* node){
   if(node->type == AST_ADD || //EXEMPLO É ARITIMETICO
                     node->type == AST_DIF ||
@@ -104,151 +270,5 @@ void error(){
                             "Semantic ERROR: Operands not compatible.\n");
                     semanticError++;
 }
-void checkOperands(AST* node){
-    switch(node->type) {
-        case AST_SYMBOL:
-            if((node->symbol->type == SYMBOL_FUNCTION|| node->symbol->type == SYMBOL_VECTOR)){
-                    error();
-                }
-        case AST_VECREAD:
-        if((node->symbol->type == SYMBOL_FUNCTION|| node->symbol->type == SYMBOL_VECTOR)){
-                     error();
-                }
-        if(isBoolean(node->son[0])){//indice é boleano erro
-              error();
-        }
-        case AST_VARASS:
-            if((node->symbol->type == SYMBOL_FUNCTION|| node->symbol->type == SYMBOL_VECTOR)){
-                     error();
-                }
-            if (isARITMETHICS(node->son[0])){//checa se da o tipo correto no caso aritimetico
-                            if(node->symbol->datatype==DATATYPE_BOOL){
-                                error();
-                            }
-                      }
-            if (isBoolean(node->son[0])){//checa se da o tipo correto no caso booleano
-                            if(node->symbol->datatype==DATATYPE_INT||
-                            node->symbol->datatype==DATATYPE_FLOAT||
-                            node->symbol->datatype==DATATYPE_LONG||
-                            node->symbol->datatype==DATATYPE_BYTE){
-                                error();
-                            }
-                      }
-        case AST_ARRAYASS:
-            if((node->symbol->type == SYMBOL_FUNCTION|| node->symbol->type == SYMBOL_VECTOR)){
-                     error();
-                }
-            if(isBoolean(node->son[0])){//indice é boleano erro
-              error();
-              } 
-            if (isARITMETHICS(node->son[1])){//checa se da o tipo correto no caso aritimetico
-                            if(node->symbol->datatype==DATATYPE_BOOL){
-                               error();
-                            }
-                      }
-            if (isBoolean(node->son[1])){//checa se da o tipo correto no caso booleano
-                            if(node->symbol->datatype==DATATYPE_INT||
-                            node->symbol->datatype==DATATYPE_FLOAT||
-                            node->symbol->datatype==DATATYPE_LONG||
-                            node->symbol->datatype==DATATYPE_BYTE){
-                               error();
-                            }
-                      }
-        case AST_ADD:
-            for(int i=0;i<2;i++){
-              if(isBoolean(node->son[i])){
-                  error();
-              }
-            }
-        case AST_MIN:
-            for(int i=0;i<2;i++){
-              if(isBoolean(node->son[i])){
-                  error();
-              }
-            }
-        case AST_MUL:
-            for(int i=0;i<2;i++){
-              if(isBoolean(node->son[i])){
-                  error();
-              }
-            }
-        case AST_DIV: // deixei quieto para deixar o exemplo do sor ,depois muda
-            for (int i = 0; i < 2; i++) {
-                if (node->son[i]->type == AST_ADD ||
-                    node->son[i]->type == AST_DIF ||
-                    node->son[i]->type == AST_MUL ||
-                    node->son[i]->type == AST_DIV ||
 
-                    (node->son[i]->type == AST_SYMBOL &&
-                     node->son[i]->symbol->type == SYMBOL_SCALAR &&
-                     node->son[i]->symbol->datatype != DATATYPE_BOOL) ||
-
-                    (node->son[i]->type == AST_SYMBOL &&
-                     (node->son[i]->symbol->type == SYMBOL_LITINT ||
-                      node->son[i]->symbol->type == SYMBOL_LITREAL)));
-                else {
-                    fprintf(stderr,
-                            "Semantic ERROR: Operands not compatible.\n");
-                    semanticError++;
-                }
-            }
-        case AST_LENE://comeca booleanas
-            for(int i=0;i<2;i++){
-              if(isARITMETHICS(node->son[i])){
-                  error();
-              }
-            }
-        case AST_GENE:
-            for(int i=0;i<2;i++){
-              if(isARITMETHICS(node->son[i])){
-                  error();
-              }
-            }
-        case AST_AND:
-            for(int i=0;i<2;i++){
-              if(isARITMETHICS(node->son[i])){
-                  error();
-              }
-            }
-        case AST_OR:
-            for(int i=0;i<2;i++){
-              if(isARITMETHICS(node->son[i])){
-                  error();
-              }
-            }
-        case AST_LE:
-            for(int i=0;i<2;i++){
-              if(isARITMETHICS(node->son[i])){
-                  error();
-              }
-            }
-        case AST_GE:
-            for(int i=0;i<2;i++){
-              if(isARITMETHICS(node->son[i])){
-                  error();
-              }
-            }
-        case AST_EQ:
-            for(int i=0;i<2;i++){
-              if(isARITMETHICS(node->son[i])){
-                  error();
-              }
-            }
-        case AST_DIF:
-            for(int i=0;i<2;i++){
-              if(isARITMETHICS(node->son[i])){
-                  error();
-              }
-            }
-        case AST_NOT:
-              if(isARITMETHICS(node->son[0])){
-                  error();
-              }
-        case AST_FUNC:
-        break;
-    }
-
-    for(int i = 0; i < MAX_SONS; i++)
-        checkOperands(node->son[i]);
-}
 
