@@ -1,2 +1,2 @@
 int x = 10;
-
+int main(){y = 2;}

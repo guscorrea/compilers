@@ -29,7 +29,7 @@ void checkAndSetTypes(AST*node) {
     if (!node) return;
 
     //take all declaration nodes
-    if(node->type == AST_VARASS || node->type == AST_FUNDEC ||node->type == AST_DEFVEC){
+    if(node->type == AST_DEF || node->type == AST_FUNDEC ||node->type == AST_DEFVEC){
         if(node->symbol && node->symbol->type != SYMBOL_IDENTIFIER) {
                 fprintf(stderr, "Semantic ERROR: Symbol %s already declared. \n", node->symbol->text);
                 semanticError++;
