@@ -16,16 +16,23 @@
 #define SYMBOL_SCALAR 4
 #define SYMBOL_VECTOR 5
 #define SYMBOL_FUNCTION 6
+#define SYMBOL_LITBOOL 7
+#define SYMBOL_LITCHAR 8
+#define SYMBOL_LITSTRING 9
+#define SYMBOL_LITBYTE 10
+
 
 #define DATATYPE_INT 1
 #define DATATYPE_LONG 2
 #define DATATYPE_FLOAT 3
 #define DATATYPE_BOOL 4
+#define DATATYPE_BYTE 5
 
 typedef struct hash_node {
 
     int type;
     int datatype;
+    int sizefunction;
     char *text;
     struct hash_node * next;
 
