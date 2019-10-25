@@ -1,2 +1,4 @@
-int x = 10;
-int main(){y = 2;}
+bool x = TRUE;
+int y[10];
+int main(){x = y[TRUE]+2/3;}
+
