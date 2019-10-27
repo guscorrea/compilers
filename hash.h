@@ -20,7 +20,7 @@
 #define SYMBOL_LITCHAR 8
 #define SYMBOL_LITSTRING 9
 #define SYMBOL_LITBYTE 10
-
+#define SYMBOL_FUNCTIONPAR 11
 
 #define DATATYPE_INT 1
 #define DATATYPE_LONG 2
@@ -32,7 +32,8 @@ typedef struct hash_node {
 
     int type;
     int datatype;
-    int sizefunction;
+    int returntype;
+    int datatypefunction[200];
     char *text;
     struct hash_node * next;
 

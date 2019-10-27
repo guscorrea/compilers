@@ -81,6 +81,7 @@ void astreePrint(AST *node, int level, FILE *outputFile) {
         case AST_TFLOAT: fprintf(outputFile, " float ");break;
         case AST_TBOOL: fprintf(outputFile, " bool ");break;
         case AST_VECREAD:fprintf(outputFile, " %s ",node->symbol->text);fprintf(outputFile, "[");astreePrint(node->son[0], level+1, outputFile) ;fprintf(outputFile, "]"); break;
+        case AST_PARENTHESIS:fprintf(outputFile, "(");astreePrint(node->son[0], level+1, outputFile) ;fprintf(outputFile, ")"); break;
         default:break;
     }
 
@@ -89,3 +90,41 @@ void astreePrint(AST *node, int level, FILE *outputFile) {
    // }
 }
 
+void PlaceFunctionParam(HASH_NODE* symbol, AST *node){
+    if(!node) return;
+    if(node->son[0]->son[0]->type==AST_TINT){
+        symbol->datatypefunction[0]=DATATYPE_INT;
+    }
+    if(node->son[0]->son[0]->type==AST_TBYTE){
+        symbol->datatypefunction[0]=DATATYPE_BYTE;
+    }
+    if(node->son[0]->son[0]->type==AST_TLONG){
+        symbol->datatypefunction[0]=DATATYPE_LONG;
+    }
+    if(node->son[0]->son[0]->type==AST_TFLOAT){
+        symbol->datatypefunction[0]=DATATYPE_FLOAT;
+    }
+    if(node->son[0]->son[0]->type==AST_TBOOL){
+        symbol->datatypefunction[0]=DATATYPE_BOOL;
+    }
+    AuxPlaceFunctionPar(symbol, node->son[1],1);
+}
+void AuxPlaceFunctionPar(HASH_NODE* symbol, AST *node,int i){
+    if(!node) return;
+    if(node->son[0]->son[0]->type==AST_TINT){
+        symbol->datatypefunction[i]=DATATYPE_INT;
+    }
+    if(node->son[0]->son[0]->type==AST_TBYTE){
+        symbol->datatypefunction[i]=DATATYPE_BYTE;
+    }
+    if(node->son[0]->son[0]->type==AST_TLONG){
+        symbol->datatypefunction[i]=DATATYPE_LONG;
+    }
+    if(node->son[0]->son[0]->type==AST_TFLOAT){
+        symbol->datatypefunction[i]=DATATYPE_FLOAT;
+    }
+    if(node->son[0]->son[0]->type==AST_TBOOL){
+        symbol->datatypefunction[i]=DATATYPE_BOOL;
+    }
+    AuxPlaceFunctionPar(symbol, node->son[1],i+1);
+}

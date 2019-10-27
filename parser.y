@@ -87,8 +87,9 @@ FILE *outputFile = NULL;
 %left '.' 'v'
 %left '~'
 
+
 %%
-main: programa {astreePrint($1,0,outputFile); astreePrint($1,0,stderr); checkAndSetTypes($1); hashCheckUndeclared();checkOperands($1); fprintf(stderr, "%d semantic errors.\n", getSemanticErrors()); }
+main: programa {astreePrint($1,0,outputFile); astreePrint($1,0,stderr); checkAndSetTypes($1); checkUndeclared();checkOperands($1); fprintf(stderr, "%d semantic errors.\n", getSemanticErrors()); }
 ;
 programa: decl programa {$$ = astreeCreate(AST_DEC,0,$1,$2,0,0);}
 | {$$ = 0;}
@@ -121,7 +122,7 @@ lit:   LIT_TRUE  {$$=astreeCreate(AST_SYMBOL,$1,0,0,0,0);}
         | LIT_INTEGER  {$$=astreeCreate(AST_SYMBOL,$1,0,0,0,0);}
         | LIT_CHAR {$$=astreeCreate(AST_SYMBOL,$1,0,0,0,0);}
 ;
-fundec: tipo TK_IDENTIFIER '(' parlist ')' body {$$ = astreeCreate(AST_FUNDEC,$2,$1,$4,$6,0);}
+fundec: tipo TK_IDENTIFIER '(' parlist ')' body {PlaceFunctionParam($2,$4);$$ = astreeCreate(AST_FUNDEC,$2,$1,$4,$6,0);}
     ;
 parlist: par  resto {$$ = astreeCreate(AST_FUNDPARMSI,0,$1,$2,0,0);}
 | {$$ = 0;}
@@ -185,7 +186,7 @@ exp:  exp '+' exp {$$ = astreeCreate(AST_ADD ,0,$1,$3,0,0);}
         | LIT_INTEGER  {$$=astreeCreate(AST_SYMBOL,$1,0,0,0,0);}
         | LIT_CHAR {$$=astreeCreate(AST_SYMBOL,$1,0,0,0,0);}
         | TK_IDENTIFIER '(' funcpar ')' {$$=astreeCreate(AST_FUNC,$1,$3,0,0,0);}
-      	| '(' exp ')'  {$$=astreeCreate(AST_FUNC,0,$2,0,0,0);}
+      	| '(' exp ')'  {$$=astreeCreate(AST_PARENTHESIS,0,$2,0,0,0);}
         ;
 funcpar: exp ',' funcpar  {$$=astreeCreate(AST_FUNCPARF,0,$1,$3,0,0);}
  | exp 
