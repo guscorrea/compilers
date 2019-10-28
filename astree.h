@@ -67,4 +67,6 @@ typedef struct astree_node {
 
 AST *astreeCreate(int type, HASH_NODE* symbol, AST *son0, AST *son1, AST *son2, AST *son3);
 void astreePrint(AST *son0, int level, FILE *outputFile);
+void PlaceFunctionParam(HASH_NODE* symbol, AST *node);
+void AuxPlaceFunctionPar(HASH_NODE* symbol, AST *node,int i);
 #endif //ETAPA1_ASTREE_H
