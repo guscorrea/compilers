@@ -79,14 +79,11 @@ FILE *outputFile = NULL;
 %type<ast> break
 %type<ast> litint
 
+%left '.' 'v' '~'
+%left '<' '>' OPERATOR_LE OPERATOR_GE
+%left OPERATOR_EQ OPERATOR_DIF
 %left '+' '-'
 %left '*' '/'
-%left OPERATOR_LE OPERATOR _GE
-%left OPERATOR_EQ OPERATOR_DIF
-%left '<' '>'
-%left '.' 'v'
-%left '~'
-
 
 %%
 main: programa {astreePrint($1,0,outputFile); astreePrint($1,0,stderr); checkAndSetTypes($1); checkUndeclared();checkOperands($1); fprintf(stderr, "%d semantic errors.\n", getSemanticErrors()); }

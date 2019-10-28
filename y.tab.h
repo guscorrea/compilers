@@ -70,9 +70,7 @@ extern int yydebug;
     OPERATOR_GE = 280,
     OPERATOR_EQ = 281,
     OPERATOR_DIF = 282,
-    TOKEN_ERROR = 283,
-    OPERATOR = 284,
-    _GE = 285
+    TOKEN_ERROR = 283
   };
 #endif
 /* Tokens.  */
@@ -102,8 +100,6 @@ extern int yydebug;
 #define OPERATOR_EQ 281
 #define OPERATOR_DIF 282
 #define TOKEN_ERROR 283
-#define OPERATOR 284
-#define _GE 285
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -115,7 +111,7 @@ union YYSTYPE
     HASH_NODE *symbol;
     AST *ast;
 
-#line 119 "y.tab.h" /* yacc.c:1909  */
+#line 115 "y.tab.h" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;

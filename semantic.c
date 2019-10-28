@@ -30,7 +30,7 @@ void checkAndSetTypes(AST*node) {
 
     //take all declaration nodes
     if(node->type == AST_DEF || node->type == AST_FUNDEC ||node->type == AST_DEFVEC||node->type == AST_PARAMETER){
-        if(node->symbol && node->symbol->type != SYMBOL_IDENTIFIER) {
+        if(node->symbol && node->symbol->type != SYMBOL_IDENTIFIER&& node->type!= AST_PARAMETER) {
                 fprintf(stderr, "Semantic ERROR: Symbol %s already declared. \n", node->symbol->text);
                 semanticError++;
         }
@@ -39,7 +39,7 @@ void checkAndSetTypes(AST*node) {
             if(node->type == AST_DEF)
                 node->symbol->type = SYMBOL_SCALAR;
             if(node->type == AST_PARAMETER){
-                node->symbol->type = SYMBOL_FUNCTIONPAR;
+                node->symbol->type = SYMBOL_SCALAR;
             }
             if(node->type == AST_FUNDEC)
                 node->symbol->type = SYMBOL_FUNCTION;
@@ -47,6 +47,7 @@ void checkAndSetTypes(AST*node) {
                 node->symbol->type = SYMBOL_VECTOR;
 
             //set also the datatype from declaration
+            if(node->type!= AST_PARAMETER){
             if(node->son[0]->type == AST_TINT)
                 node->symbol->datatype = DATATYPE_INT;
             if(node->son[0]->type == AST_TFLOAT )
@@ -57,6 +58,7 @@ void checkAndSetTypes(AST*node) {
                 node->symbol->datatype = DATATYPE_BOOL;
             if(node->son[0]->type==AST_TBYTE)
                 node->symbol->datatype = DATATYPE_BYTE;
+            }
         }
 
     for (int i = 0; i < MAX_SONS; ++i) {
@@ -79,6 +81,11 @@ void checkOperands(AST* node){
             }
             //
             AST* nodeaux = node->son[0];
+            if(node->symbol->datatypefunction[0]==0){
+                if(node->son[0]){
+                    error();
+                }
+            }
             for(i=0;node->symbol->datatypefunction[i]!=0;i++){
                 
                 type = node->symbol->datatypefunction[i];
@@ -226,23 +233,9 @@ void checkOperands(AST* node){
             }
             break;
         case AST_DIV: // deixei quieto para deixar o exemplo do sor ,depois muda
-            for (int i = 0; i < 2; i++) {
-                if (node->son[i]->type == AST_ADD ||
-                    node->son[i]->type == AST_DIF ||
-                    node->son[i]->type == AST_MUL ||
-                    node->son[i]->type == AST_DIV ||
-
-                    (node->son[i]->type == AST_SYMBOL &&
-                     node->son[i]->symbol->type == SYMBOL_SCALAR &&
-                     node->son[i]->symbol->datatype != DATATYPE_BOOL) ||
-
-                    (node->son[i]->type == AST_SYMBOL &&
-                     (node->son[i]->symbol->type == SYMBOL_LITINT ||
-                      node->son[i]->symbol->type == SYMBOL_LITREAL)));
-                else {
-                    fprintf(stderr,
-                            "Semantic ERROR: Operands not compatible.\n");
-                    semanticError++;
+            for(int i=0;i<2;i++){
+                if(isBoolean(node->son[i])){
+                    error();
                 }
             }
             break;
@@ -291,18 +284,20 @@ void checkOperands(AST* node){
             }
             break;
         case AST_EQ:
-            for(int i=0;i<2;i++){
-                if(isBoolean(node->son[i])){
+                if(isBoolean(node->son[0])!=isBoolean(node->son[1])){
                     error();
                 }
-            }
+                if(isARITMETHICS(node->son[0])!=isARITMETHICS(node->son[1])){
+                    error();
+                }
             break;
         case AST_DIF:
-            for(int i=0;i<2;i++){
-                if(isBoolean(node->son[i])){
+            if(isBoolean(node->son[0])!=isBoolean(node->son[1])){
                     error();
                 }
-            }
+                if(isARITMETHICS(node->son[0])!=isARITMETHICS(node->son[1])){
+                    error();
+                }
             break;
         case AST_NOT:
             if(isARITMETHICS(node->son[0])){
@@ -330,7 +325,7 @@ int isARITMETHICS(AST* node){
         return 0;
     }
     if(node->type == AST_PARENTHESIS){
-        isBoolean(node->son[0]);
+        return isARITMETHICS(node->son[0]);
     }
     if (node->type == AST_AND ||
                     node->type == AST_LENE ||
@@ -368,6 +363,15 @@ int isARITMETHICS(AST* node){
                      node->symbol->datatype == DATATYPE_LONG)){
         return 1;
     }
+    else if(node->type == AST_SYMBOL &&
+                     (node->symbol->type == SYMBOL_LITSTRING)){
+                         return 1;
+                     }
+    else if(node->type==AST_VECREAD&&node->symbol->type == SYMBOL_VECTOR&&(node->symbol->datatype == DATATYPE_FLOAT||
+                     node->symbol->datatype == DATATYPE_INT||
+                     node->symbol->datatype == DATATYPE_LONG)){
+        return 1;
+    }
     else{
         return 0;
     }
@@ -377,7 +381,7 @@ int isBoolean(AST* node){
         return 0;
     }
     if(node->type == AST_PARENTHESIS){
-        isBoolean(node->son[0]);
+        return isBoolean(node->son[0]);
     }
     
     if(node->type == AST_ADD || //EXEMPLO É ARITIMETICO
@@ -408,9 +412,14 @@ int isBoolean(AST* node){
                           fprintf(stderr,"%i\n",node->type);
                          return 1; 
                      }
+    else if(node->type==AST_VECREAD&& node->symbol->type == SYMBOL_VECTOR&&(node->symbol->datatype == DATATYPE_BOOL)){
+        return 1;
+    }
     else if(node->type==AST_FUNC&&node->symbol->datatype == DATATYPE_BOOL){
         return 1;
     }
+    
+
     else{
         return 0;
     }
