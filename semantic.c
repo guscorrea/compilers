@@ -263,8 +263,7 @@ void checkOperands(AST* node){
         case AST_OR:
             for(int i=0;i<2;i++){
                 if(isARITMETHICS(node->son[i])){
-                    fprintf(stderr,
-                            "OR ERROR");
+                    //fprintf(stderr, "OR ERROR");
                     error();
                 }
             }
@@ -353,9 +352,8 @@ int isARITMETHICS(AST* node){
                     (node->type == AST_SYMBOL &&
                      (node->symbol->type == SYMBOL_LITINT ||
                       node->symbol->type == SYMBOL_LITREAL))){
-                          fprintf(stderr,
-                            "OR ERROR");
-                          fprintf(stderr,"%i\n",node->type);
+                          //fprintf(stderr, "OR ERROR");
+                          //fprintf(stderr,"%i\n",node->type);
                           return 1;
                       }
     else if(node->type==AST_FUNC&&(node->symbol->datatype == DATATYPE_FLOAT||
@@ -407,9 +405,8 @@ int isBoolean(AST* node){
 
                     (node->type == AST_SYMBOL &&
                      (node->symbol->type == SYMBOL_LITBOOL ))){
-                         fprintf(stderr,
-                            "EQ ERROR");
-                          fprintf(stderr,"%i\n",node->type);
+                         //fprintf(stderr, "EQ ERROR");
+                          //fprintf(stderr,"%i\n",node->type);
                          return 1; 
                      }
     else if(node->type==AST_VECREAD&& node->symbol->type == SYMBOL_VECTOR&&(node->symbol->datatype == DATATYPE_BOOL)){
@@ -425,13 +422,11 @@ int isBoolean(AST* node){
     }
 }
 void error(){
-    fprintf(stderr,
-                            "Semantic ERROR: Operands not compatible.\n");
-                    semanticError++;
+    //fprintf(stderr, "Semantic ERROR: Operands not compatible.\n");
+    semanticError++;
 }
 void SearchReturn(AST* node){
-     fprintf(stderr,
-                            "Semantic ERROR: Operands not compatible.\n");
+    //fprintf(stderr, "Semantic ERROR: Operands not compatible.\n");
     AST* auxnode;
     int foundReturn = 0;
     auxnode = node->son[2]->son[0];

@@ -1397,7 +1397,7 @@ yyreduce:
     {
         case 2:
 #line 89 "parser.y" /* yacc.c:1646  */
-    {astreePrint((yyvsp[0].ast),0,outputFile); astreePrint((yyvsp[0].ast),0,stderr); checkAndSetTypes((yyvsp[0].ast)); checkUndeclared();checkOperands((yyvsp[0].ast)); fprintf(stderr, "%d semantic errors.\n", getSemanticErrors()); }
+    {astreePrint((yyvsp[0].ast),0,outputFile); checkAndSetTypes((yyvsp[0].ast)); checkUndeclared();checkOperands((yyvsp[0].ast)); fprintf(stderr, "%d semantic errors.\n", getSemanticErrors()); }
 #line 1402 "y.tab.c" /* yacc.c:1646  */
     break;
 

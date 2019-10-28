@@ -86,7 +86,7 @@ FILE *outputFile = NULL;
 %left '*' '/'
 
 %%
-main: programa {astreePrint($1,0,outputFile); astreePrint($1,0,stderr); checkAndSetTypes($1); checkUndeclared();checkOperands($1); fprintf(stderr, "%d semantic errors.\n", getSemanticErrors()); }
+main: programa {astreePrint($1,0,outputFile); checkAndSetTypes($1); checkUndeclared();checkOperands($1); fprintf(stderr, "%d semantic errors.\n", getSemanticErrors()); }
 ;
 programa: decl programa {$$ = astreeCreate(AST_DEC,0,$1,$2,0,0);}
 | {$$ = 0;}

@@ -36,8 +36,10 @@ int main(int argc, char** argv)
     yyparse();
     hashPrint();
 
-    if(getSemanticErrors() > 0)
+    if(getSemanticErrors() > 0) {
+        fprintf(stderr, "%d semantic errors.\n", getSemanticErrors());
         exit(4);
+    }
 
     fprintf(stderr, "Finished!\n");
     exit(0);
