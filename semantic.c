@@ -431,9 +431,7 @@ void SearchReturn(AST* node){
     int foundReturn = 0;
     auxnode = node->son[2]->son[0];
     if(!auxnode->son[0]){
-        if(!foundReturn){
-            error();
-        }
+        
         return;}
     if(auxnode->son[0]->type==AST_RETURN){
         foundReturn = 1;
@@ -442,9 +440,7 @@ void SearchReturn(AST* node){
     auxnode = auxnode->son[1];
     while(auxnode){
         if(!auxnode->son[0]){
-            if(!foundReturn){
-            error();
-        }
+            
             return;
         }
         if(auxnode->son[0]->type==AST_RETURN){
@@ -453,9 +449,7 @@ void SearchReturn(AST* node){
       }
         auxnode=auxnode->son[1];
     }
-    if(!foundReturn){
-            error();
-        }
+  
 }
 void CheckReturn(AST* node ,int type){
     if(type==DATATYPE_BOOL){
