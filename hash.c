@@ -82,3 +82,11 @@ HASH_NODE * makeTemp(void) {
     sprintf(name, "Temp: %d", serialNumber++);
     return hashInsert(name, 0);
 }
+
+HASH_NODE * makeLabel(void) {
+    static int serialNumber = 0;
+    static char name[100];
+
+    sprintf(name, "Label: %d", serialNumber++);
+    return hashInsert(name, 0);
+}

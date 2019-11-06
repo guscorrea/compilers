@@ -21,6 +21,7 @@
 #define SYMBOL_LITSTRING 9
 #define SYMBOL_LITBYTE 10
 #define SYMBOL_FUNCTIONPAR 11
+#define SYMBOL_LABEL 12
 
 #define DATATYPE_INT 1
 #define DATATYPE_LONG 2
@@ -48,5 +49,6 @@ HASH_NODE *hashFind(char *text);
 int hashCheckUndeclared(void);
 
 HASH_NODE * makeTemp(void);
+HASH_NODE * makeLabel(void);
 
 #endif //ETAPA1_HASH_H

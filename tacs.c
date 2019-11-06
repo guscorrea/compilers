@@ -4,9 +4,12 @@
 
 #include "tacs.h"
 
+TAC* makeBinOp(int type, TAC* code0, TAC* code1);
+TAC* makeIfThen(int type, TAC* code0, TAC* code1);
+
 TAC* tacCreate(int type, HASH_NODE *res, HASH_NODE *op1, HASH_NODE *op2) {
     TAC* newtac;
-    newtac = (TAC* calloc(1, sizeof(TAC)));
+    newtac = (TAC*) calloc(1, sizeof(TAC));
     newtac->type = type;
     newtac->res = res;
     newtac->op1 = op1;
@@ -18,6 +21,7 @@ TAC* tacCreate(int type, HASH_NODE *res, HASH_NODE *op1, HASH_NODE *op2) {
 
 void tacPrintSingle( TAC *tac) {
     if (!tac) return;
+    if (tac->type == TAC_SYMBOL) return;
     fprintf(stderr, "TAC(");
     switch (tac->type) {
         case TAC_SYMBOL: fprintf(stderr, "TAC_SYMBOL"); break;
@@ -26,6 +30,7 @@ void tacPrintSingle( TAC *tac) {
         case TAC_MUL: fprintf(stderr, "TAC_MUL"); break;
         case TAC_DIV: fprintf(stderr, "TAC_DIV"); break;
         case TAC_MOVE: fprintf(stderr, "TAC_MOVE"); break;
+        case TAC_IF: fprintf(stderr, "TAC_IF"); break;
         default: fprintf(stderr, "UNKNOWN"); break;
     }
     if (tac->res) fprintf(stderr, ",%s", tac->res->text);
@@ -65,10 +70,38 @@ TAC* generateCode (AST *ast) {
         switch (ast->type) {
             case AST_SYMBOL: return tacCreate(TAC_SYMBOL, ast->symbol, 0, 0); break;
             case AST_VARASS: return tacJoin(code[0], tacCreate(TAC_MOVE, ast->symbol, code[0]?code[0]->res:0,0)); break;
-            case AST_ADD: return tacJoin(tacJoin(code[0], code[1]), tacCreate(TAC_ADD, makeTemp(), code[0]?code[0]->res:0, code[1]?code[1]->res:0)); break;
+            case AST_ADD: return makeBinOp(TAC_ADD, code[0], code[1]); break;
+            case AST_DIF: return makeBinOp(TAC_SUB, code[0], code[1]); break;
+            case AST_MUL: return makeBinOp(TAC_MUL, code[0], code[1]); break;
+            case AST_DIV: return makeBinOp(TAC_DIV, code[0], code[1]); break;
+            case AST_IF: return makeIfThen(TAC_IF, code[0], code[1]);
             default: return tacJoin(tacJoin(tacJoin(code[0], code[1]), code[2]), code[3]); break;
         }
         return 0;
 }
+
+TAC* makeBinOp(int type, TAC* code0, TAC* code1) {
+    TAC *list = 0;
+    TAC *novatac = 0;
+    novatac = tacCreate(type, makeTemp(), code0?code0->res:0, code1?code1->res:0);
+    list = tacJoin(code0, code1);
+    novatac->prev = list;
+    return novatac;
+
+}
+
+TAC* makeIfThen(int type, TAC* code0, TAC* code1){
+    HASH_NODE *label = 0;
+    TAC* tacif = 0;
+    TAC* taclabel = 0;
+
+    label = makeLabel();
+    tacif = tacCreate(TAC_IF, label, code0?code0->res:0,0);
+    taclabel = tacCreate(TAC_LABEL, label, 0, 0);
+
+    return tacJoin(tacJoin(tacJoin(code0, tacif), code1), taclabel);
+}
+
+
 
 

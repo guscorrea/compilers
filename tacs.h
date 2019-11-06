@@ -14,6 +14,8 @@
 #define TAC_MUL 4
 #define TAC_DIV 5
 #define TAC_MOVE 6
+#define TAC_IF 7
+#define TAC_LABEL 8
 
 typedef struct tac_node {
     int type;
