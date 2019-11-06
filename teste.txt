@@ -47,7 +47,7 @@ int funcaodois(){
 k=6.66
 }
 
-int funcvazia() {    }
+int funcvazia() {  }
 
 int funccmdvaz() {  ; ;  ; }
 

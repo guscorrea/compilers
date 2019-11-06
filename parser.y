@@ -6,6 +6,7 @@
 #include "hash.h"
 #include "astree.h"
 #include "semantic.h"
+#include "tacs.h"
 int yyerror(char *msg);
 int getLineNumber(void);
 
@@ -86,7 +87,7 @@ FILE *outputFile = NULL;
 %left '*' '/'
 
 %%
-main: programa {astreePrint($1,0,outputFile); checkAndSetTypes($1); checkUndeclared();checkOperands($1); fprintf(stderr, "%d semantic errors.\n", getSemanticErrors()); }
+main: programa {astreePrint($1,0,outputFile); checkAndSetTypes($1); checkUndeclared();checkOperands($1); fprintf(stderr, "%d semantic errors.\n", getSemanticErrors()); tacPrintBackwards(generateCode($1)); }
 ;
 programa: decl programa {$$ = astreeCreate(AST_DEC,0,$1,$2,0,0);}
 | {$$ = 0;}

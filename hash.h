@@ -47,4 +47,6 @@ void hashPrint(void);
 HASH_NODE *hashFind(char *text);
 int hashCheckUndeclared(void);
 
+HASH_NODE * makeTemp(void);
+
 #endif //ETAPA1_HASH_H
