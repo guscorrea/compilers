@@ -31,7 +31,16 @@ void tacPrintSingle( TAC *tac) {
         case TAC_DIV: fprintf(stderr, "TAC_DIV"); break;
         case TAC_MOVE: fprintf(stderr, "TAC_MOVE"); break;
         case TAC_IF: fprintf(stderr, "TAC_IF"); break;
-        default: fprintf(stderr, "UNKNOWN"); break;
+        case TAC_AND: fprintf(stderr, "TAC_AND"); break;
+        case TAC_OR: fprintf(stderr, "TAC_OR"); break;
+        case TAC_NOT: fprintf(stderr, "TAC_NOT"); break;
+        case TAC_LABEL: fprintf(stderr, "TAC_LABEL"); break;
+        case TAC_LE: fprintf(stderr, "TAC_LE"); break;
+        case TAC_GE: fprintf(stderr, "TAC_GE"); break;
+        case TAC_EQ: fprintf(stderr, "TAC_EQ"); break;
+        case TAC_DIF: fprintf(stderr, "TAC_DIF"); break;
+        //TODO: finish print cases
+        default: fprintf(stderr, "UNKNOWN - type %i", tac->type); break;
     }
     if (tac->res) fprintf(stderr, ",%s", tac->res->text);
             else fprintf(stderr, ",0");
@@ -39,7 +48,7 @@ void tacPrintSingle( TAC *tac) {
             else fprintf(stderr, ",0");
     if (tac->op2) fprintf(stderr, ",%s", tac->op2->text);
             else fprintf(stderr, ",0");
-    fprintf(stderr, ");");
+    fprintf(stderr, ");\n");
 }
 
 void tacPrintBackwards(TAC *tac) {
@@ -71,10 +80,18 @@ TAC* generateCode (AST *ast) {
             case AST_SYMBOL: return tacCreate(TAC_SYMBOL, ast->symbol, 0, 0); break;
             case AST_VARASS: return tacJoin(code[0], tacCreate(TAC_MOVE, ast->symbol, code[0]?code[0]->res:0,0)); break;
             case AST_ADD: return makeBinOp(TAC_ADD, code[0], code[1]); break;
-            case AST_DIF: return makeBinOp(TAC_SUB, code[0], code[1]); break;
+            case AST_MIN: return makeBinOp(TAC_SUB, code[0], code[1]); break;
             case AST_MUL: return makeBinOp(TAC_MUL, code[0], code[1]); break;
             case AST_DIV: return makeBinOp(TAC_DIV, code[0], code[1]); break;
+            case AST_LE: return makeBinOp(TAC_LE, code[0], code[1]); break;
+            case AST_GE: return makeBinOp(TAC_GE, code[0], code[1]); break;
+            case AST_AND: return makeBinOp(TAC_AND, code[0], code[1]); break;
+            case AST_OR: return makeBinOp(TAC_OR, code[0], code[1]); break;
+            case AST_NOT: return makeBinOp(TAC_NOT, code[0], code[1]); break;
+            case AST_EQ: return makeBinOp(TAC_EQ, code[0], code[1]); break;
+            case AST_DIF: return makeBinOp(TAC_DIF, code[0], code[1]); break;
             case AST_IF: return makeIfThen(TAC_IF, code[0], code[1]);
+            //TODO: finish the operations
             default: return tacJoin(tacJoin(tacJoin(code[0], code[1]), code[2]), code[3]); break;
         }
         return 0;
