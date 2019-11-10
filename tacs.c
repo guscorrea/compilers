@@ -3,7 +3,7 @@
 //
 
 #include "tacs.h"
-
+static int call_count = 0;
 TAC* makeBinOp(int type, TAC* code0, TAC* code1);
 TAC* makeIfThen(int type, TAC* code0, TAC* code1);
 
@@ -39,6 +39,16 @@ void tacPrintSingle( TAC *tac) {
         case TAC_GE: fprintf(stderr, "TAC_GE"); break;
         case TAC_EQ: fprintf(stderr, "TAC_EQ"); break;
         case TAC_DIF: fprintf(stderr, "TAC_DIF"); break;
+        case TAC_PRINT: fprintf(stderr, "TAC_PRINT"); break;
+        case TAC_ASSIGN: fprintf(stderr, "TAC_ASSIGN"); break;
+        case TAC_BEGIN_FUNC: fprintf(stderr, "TAC_BEGIN_FUNC"); break;
+        case TAC_END_FUNC: fprintf(stderr, "TAC_END_FUNC"); break;
+        case TAC_INDEX_TEMP:fprintf(stderr, "TAC_INDEX_TEMP"); break;
+        case TAC_ARRAY_INDEX: fprintf(stderr, "TAC_VEC_READ"); break;
+        case TAC_RET: fprintf(stderr, "TAC_RET"); break;
+        case TAC_READ: fprintf(stderr, "TAC_READ"); break;
+
+
         //TODO: finish print cases
         default: fprintf(stderr, "UNKNOWN - type %i", tac->type); break;
     }
@@ -90,7 +100,65 @@ TAC* generateCode (AST *ast) {
             case AST_NOT: return makeBinOp(TAC_NOT, code[0], code[1]); break;
             case AST_EQ: return makeBinOp(TAC_EQ, code[0], code[1]); break;
             case AST_DIF: return makeBinOp(TAC_DIF, code[0], code[1]); break;
-            case AST_IF: return makeIfThen(TAC_IF, code[0], code[1]);
+            case AST_IF: return makeIfThen(TAC_IF, code[0], code[1]);  break;
+            case AST_ARRAYASS:
+               return TAC_make_assign(code[0],code[1], ast);break;
+            case AST_VECREAD:
+               return TAC_make_ary_index(ast, code[0]);break;
+            case AST_RETURN:
+                return TAC_make_return(code[0]);
+            case AST_READ:
+                 return  tacCreate(TAC_READ, ast->symbol, NULL, NULL);
+            /*case AST_DEFVEC:
+                TAC *ary_assign_tac = tacCreate(TAC_ARRAY_ASSIGN ,ast->symbol,
+                                     code[1]->res, code[2]->res);
+                return TAC_join(TAC_join(TAC_join(code[0], code[2]), expression), ary_assign_tac);break;
+        */
+            case AST_PRINT: return code[0];break;
+            case AST_PRINTARRAY:
+                if(code[1]==NULL){
+                    return TAC_make_print(code[0]);
+                }
+                else{
+                    return tacJoin(TAC_make_print(code[0]), code[1]);
+                }
+                break;
+            case AST_SEQLITI:
+                return code[0];break;
+            case AST_SEQLIT:
+                if(code[1]==NULL){
+                    return code[0];
+                }
+                else{
+                return tacJoin(code[0], code[1]);
+                }break;
+            
+            case AST_FUNDEC:
+                return TAC_make_func_declaration(ast, code[1], code[2]);break;
+/*            case AST_FUNC:
+            case AST_WHILE:
+                return TAC_make_while(codes[0], codes[1]);
+            case AST_IFELSE:
+                return TAC_make_if_else(codes[0], codes[1], codes[2]);
+            case AST_FOR:
+                
+            case AST_READ:
+                return TAC_make_read(codes[0]); */
+            /*case AST_FUNC_CALL:
+                return TAC_make_func_call(codes[0], codes[1], node->callId);
+            case AST_FUNDPARMSI:
+                call_count++;
+                if(code[1]==NULL){
+                    return code[0]
+                }
+                else{
+                return tacJoin(code[0], code[1])
+                }
+            case AST_FUNCPARF:
+                return tacJoin(code[0], code[1]);
+            case AST_ARG:*/
+
+            
             //TODO: finish the operations
             default: return tacJoin(tacJoin(tacJoin(code[0], code[1]), code[2]), code[3]); break;
         }
@@ -104,9 +172,46 @@ TAC* makeBinOp(int type, TAC* code0, TAC* code1) {
     list = tacJoin(code0, code1);
     novatac->prev = list;
     return novatac;
-
 }
 
+TAC *TAC_make_return(TAC *expression) {
+    TAC *return_tac = tacCreate(TAC_RET, expression->res, NULL, NULL);
+    return tacJoin(expression, return_tac);
+}
+
+
+TAC *TAC_make_func_declaration(AST *node, TAC *func_params, TAC *func_body) {
+    TAC *begin_func_tac = tacCreate(TAC_BEGIN_FUNC, node->symbol, NULL, NULL);
+    TAC *end_func_tac = tacCreate(TAC_END_FUNC, node->symbol, NULL, NULL);
+
+    return tacJoin(tacJoin(tacJoin(begin_func_tac, func_params), func_body), end_func_tac);
+}
+
+TAC* TAC_make_print(TAC *expression) {
+    TAC *print_tac = tacCreate(TAC_PRINT, expression->res, NULL, NULL);
+    return tacJoin(expression, print_tac);
+}
+
+TAC* TAC_make_assign(TAC *expression2 , TAC *expression,AST *node) {
+    TAC *symbol = tacCreate(TAC_SYMBOL, node->symbol , 0, 0);
+    TAC *assign_tac = tacCreate(TAC_ASSIGN, node->symbol,expression2->res, expression->res);
+    return tacJoin(tacJoin(tacJoin(symbol, expression2), expression), assign_tac);
+}
+/*
+TAC *TAC_make_ary_assign(TAC *identifier, TAC *index, TAC *expression) {
+    TAC *ary_assign_tac = tacCreate(TAC_ARRAY_ASSIGN, identifier->res,
+                                     index->res, expression->res);
+    return tacJoin(tacJoin(tacJoin(identifier, index), expression), ary_assign_tac);
+}
+
+*/
+TAC *TAC_make_ary_index(AST *id, TAC *index) {
+    TAC *temp_tac = tacCreate(TAC_INDEX_TEMP, makeTemp(), NULL, NULL);
+    TAC *identifier = tacCreate(TAC_SYMBOL, id->symbol , 0, 0);
+    TAC *ary_index_tac = tacCreate(TAC_ARRAY_INDEX, temp_tac->res,
+                                    id->symbol, index->res);
+    return tacJoin(tacJoin(tacJoin(temp_tac, identifier), index), ary_index_tac);
+}
 TAC* makeIfThen(int type, TAC* code0, TAC* code1){
     HASH_NODE *label = 0;
     TAC* tacif = 0;
