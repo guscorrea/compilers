@@ -6,6 +6,7 @@
 
 TAC* makeBinOp(int type, TAC* code0, TAC* code1);
 TAC* makeIfThen(int type, TAC* code0, TAC* code1);
+TAC* make_while(TAC *condition, TAC *body);
 
 TAC* tacCreate(int type, HASH_NODE *res, HASH_NODE *op1, HASH_NODE *op2) {
     TAC* newtac;
@@ -40,6 +41,9 @@ void tacPrintSingle( TAC *tac) {
         case TAC_EQ: fprintf(stderr, "TAC_EQ"); break;
         case TAC_DIF: fprintf(stderr, "TAC_DIF"); break;
         //TODO: finish print cases
+        case TAC_JMP: fprintf(stderr, "TAC_JMP"); break;
+        case TAC_JZ: fprintf(stderr, "TAC_JZ"); break;
+        case TAC_WHILE: fprintf(stderr, "TAC_WHILE"); break;
         default: fprintf(stderr, "UNKNOWN - type %i", tac->type); break;
     }
     if (tac->res) fprintf(stderr, ",%s", tac->res->text);
@@ -90,7 +94,8 @@ TAC* generateCode (AST *ast) {
             case AST_NOT: return makeBinOp(TAC_NOT, code[0], code[1]); break;
             case AST_EQ: return makeBinOp(TAC_EQ, code[0], code[1]); break;
             case AST_DIF: return makeBinOp(TAC_DIF, code[0], code[1]); break;
-            case AST_IF: return makeIfThen(TAC_IF, code[0], code[1]);
+            case AST_IF: return makeIfThen(TAC_IF, code[0], code[1]); break;
+            case AST_WHILE: return make_while(code[0], code[1]); break;
             //TODO: finish the operations
             default: return tacJoin(tacJoin(tacJoin(code[0], code[1]), code[2]), code[3]); break;
         }
@@ -118,6 +123,18 @@ TAC* makeIfThen(int type, TAC* code0, TAC* code1){
 
     return tacJoin(tacJoin(tacJoin(code0, tacif), code1), taclabel);
 }
+
+TAC* make_while(TAC *condition, TAC *body) {
+    HASH_NODE *startNode = makeLabel();
+    HASH_NODE *endNode = makeLabel();
+    TAC *beginLabel = tacCreate(TAC_LABEL, startNode, NULL, NULL);
+    TAC *endLabel = tacCreate(TAC_LABEL, endNode, NULL, NULL);
+    TAC *goto_end_if_zero = tacCreate(TAC_JZ, endNode, condition == NULL ? NULL : condition->res, NULL);
+    TAC *goto_begin = tacCreate(TAC_JMP, startNode, NULL, NULL);
+    return tacJoin(beginLabel, tacJoin(condition, tacJoin(goto_end_if_zero, tacJoin(body, tacJoin(goto_begin, endLabel)))));
+}
+
+
 
 
 

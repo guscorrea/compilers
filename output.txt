@@ -1,1 +1,1 @@
-    int  y =  10;       int  main ()   {          y  =       5     ;       if (        TRUE )  then         y  =         3      ;}
+    int  y =  5;       int  main ()   {          while (              y <        10 )       {                y  =                    y +           1        ;}     ;}

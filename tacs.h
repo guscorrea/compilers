@@ -23,6 +23,9 @@
 #define TAC_GE 13
 #define TAC_EQ 14
 #define TAC_DIF 15
+#define TAC_JZ 20
+#define TAC_JMP 21
+#define TAC_WHILE 22
 
 
 typedef struct tac_node {
