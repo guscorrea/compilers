@@ -31,8 +31,8 @@
 #define TAC_ARRAY_INDEX 21
 #define TAC_RET 22
 #define TAC_READ 23
-#define TAC_JZ 24
-#define TAC_JMP 25
+#define TAC_IFZ 24
+#define TAC_JUMP 25
 #define TAC_WHILE 26
 #define TAC_TEMP_FUNCTION 27
 #define TAC_CALL 28

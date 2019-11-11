@@ -6,7 +6,8 @@
 static int call_count = 0;
 TAC* makeBinOp(int type, TAC* code0, TAC* code1);
 TAC* makeIfThen(int type, TAC* code0, TAC* code1);
-TAC* make_while(TAC *condition, TAC *body);
+TAC* makeWhile(TAC *condition, TAC *body);
+TAC* makeIfThenElse(TAC *condition, TAC *if_true, TAC *if_false);
 
 TAC* tacCreate(int type, HASH_NODE *res, HASH_NODE *op1, HASH_NODE *op2) {
     TAC* newtac;
@@ -48,8 +49,8 @@ void tacPrintSingle( TAC *tac) {
         case TAC_ARRAY_INDEX: fprintf(stderr, "TAC_VEC_READ"); break;
         case TAC_RET: fprintf(stderr, "TAC_RET"); break;
         case TAC_READ: fprintf(stderr, "TAC_READ"); break;
-        case TAC_JMP: fprintf(stderr, "TAC_JMP"); break;
-        case TAC_JZ: fprintf(stderr, "TAC_JZ"); break;
+        case TAC_JUMP: fprintf(stderr, "TAC_JUMP"); break;
+        case TAC_IFZ: fprintf(stderr, "TAC_IFZ"); break;
         case TAC_WHILE: fprintf(stderr, "TAC_WHILE"); break;
         case TAC_PUSH_ARG:fprintf(stderr, "TAC_PUSH_ARG"); break;
         case TAC_CALL:fprintf(stderr, "TAC_CALL"); break;
@@ -113,14 +114,12 @@ TAC* generateCode (AST *ast,AST *FUNC) {
             case AST_EQ: return makeBinOp(TAC_EQ, code[0], code[1]); break;
             case AST_DIF: return makeBinOp(TAC_DIF, code[0], code[1]); break;
             case AST_IF: return makeIfThen(TAC_IF, code[0], code[1]);  break;
-            case AST_ARRAYASS:
-               return TAC_make_assign(code[0],code[1], ast);break;
-            case AST_VECREAD:
-               return TAC_make_ary_index(ast, code[0]);break;
-            case AST_RETURN:
-                return TAC_make_return(code[0]);
-            case AST_READ:
-                 return  tacCreate(TAC_READ, ast->symbol, NULL, NULL);
+            case AST_WHILE: return makeWhile(code[0], code[1]); break;
+            case AST_IFELSE: return makeIfThenElse(code[0], code[1], code[2]);
+            case AST_ARRAYASS: return TAC_make_assign(code[0],code[1], ast);break;
+            case AST_VECREAD: return TAC_make_ary_index(ast, code[0]);break;
+            case AST_RETURN: return TAC_make_return(code[0]);
+            case AST_READ: return  tacCreate(TAC_READ, ast->symbol, NULL, NULL);
             /*case AST_DEFVEC:
                 TAC *ary_assign_tac = tacCreate(TAC_ARRAY_ASSIGN ,ast->symbol,
                                      code[1]->res, code[2]->res);
@@ -148,10 +147,6 @@ TAC* generateCode (AST *ast,AST *FUNC) {
             case AST_FUNDEC:
                 return TAC_make_func_declaration(ast, code[1], code[2]);break;
 /*            case AST_FUNC:
-            case AST_WHILE:
-                return TAC_make_while(codes[0], codes[1]);
-            case AST_IFELSE:
-                return TAC_make_if_else(codes[0], codes[1], codes[2]);
             case AST_FOR:
 
             case AST_READ:
@@ -246,13 +241,24 @@ TAC* makeIfThen(int type, TAC* code0, TAC* code1){
     return tacJoin(tacJoin(tacJoin(code0, tacif), code1), taclabel);
 }
 
-TAC* make_while(TAC *condition, TAC *body) {
+TAC* makeIfThenElse(TAC *condition, TAC *if_true, TAC *if_false) {
+    HASH_NODE *elseLabel = makeLabel();
+    HASH_NODE *endLabel = makeLabel();
+    TAC *jz_tac = tacCreate(TAC_IFZ, elseLabel, condition?condition->res:0, 0);
+    TAC *else_tac = tacCreate(TAC_LABEL, elseLabel, 0, 0);
+    TAC *jmp_tac = tacCreate(TAC_JUMP, endLabel, 0, 0);
+    TAC *end_tac = tacCreate(TAC_LABEL, endLabel, 0, 0);
+
+    return tacJoin(condition, tacJoin(jz_tac, tacJoin(if_true, tacJoin(jmp_tac, tacJoin(else_tac, tacJoin(if_false, end_tac))))));
+}
+
+TAC* makeWhile(TAC *condition, TAC *body) {
     HASH_NODE *startNode = makeLabel();
     HASH_NODE *endNode = makeLabel();
-    TAC *beginLabel = tacCreate(TAC_LABEL, startNode, NULL, NULL);
-    TAC *endLabel = tacCreate(TAC_LABEL, endNode, NULL, NULL);
-    TAC *goto_end_if_zero = tacCreate(TAC_JZ, endNode, condition == NULL ? NULL : condition->res, NULL);
-    TAC *goto_begin = tacCreate(TAC_JMP, startNode, NULL, NULL);
+    TAC *beginLabel = tacCreate(TAC_LABEL, startNode, 0, 0);
+    TAC *endLabel = tacCreate(TAC_LABEL, endNode, 0, 0);
+    TAC *goto_end_if_zero = tacCreate(TAC_IFZ, endNode, condition?condition->res:0,0);
+    TAC *goto_begin = tacCreate(TAC_JUMP, startNode, 0, 0);
     return tacJoin(beginLabel, tacJoin(condition, tacJoin(goto_end_if_zero, tacJoin(body, tacJoin(goto_begin, endLabel)))));
 }
 
