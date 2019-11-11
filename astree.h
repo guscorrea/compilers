@@ -57,6 +57,7 @@
 #define AST_FUNDPARMS 45
 #define AST_VECREAD 100
 #define AST_PARENTHESIS 101
+#define AST_ARG 102
 
 
 typedef struct astree_node {

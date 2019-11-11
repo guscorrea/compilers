@@ -87,7 +87,7 @@ FILE *outputFile = NULL;
 %left '*' '/'
 
 %%
-main: programa {astreePrint($1,0,outputFile); checkAndSetTypes($1); checkUndeclared();checkOperands($1); fprintf(stderr, "%d semantic errors.\n", getSemanticErrors()); tacPrintBackwards(generateCode($1)); }
+main: programa {astreePrint($1,0,outputFile); checkAndSetTypes($1); checkUndeclared();checkOperands($1); fprintf(stderr, "%d semantic errors.\n", getSemanticErrors()); tacPrintBackwards(generateCode($1,NULL)); }
 ;
 programa: decl programa {$$ = astreeCreate(AST_DEC,0,$1,$2,0,0);}
 | {$$ = 0;}
@@ -187,7 +187,7 @@ exp:  exp '+' exp {$$ = astreeCreate(AST_ADD ,0,$1,$3,0,0);}
       	| '(' exp ')'  {$$=astreeCreate(AST_PARENTHESIS,0,$2,0,0,0);}
         ;
 funcpar: exp ',' funcpar  {$$=astreeCreate(AST_FUNCPARF,0,$1,$3,0,0);}
- | exp 
+ | exp {$$=astreeCreate(AST_ARG,0,$1,0,0,0);}
  | {$$ = 0;}
 ;
 if: KW_IF '(' exp  ')' KW_THEN cmd {$$ = astreeCreate(AST_IF,0,$3,$6,0,0);}

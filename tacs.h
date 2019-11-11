@@ -34,14 +34,20 @@
 #define TAC_JZ 24
 #define TAC_JMP 25
 #define TAC_WHILE 26
+#define TAC_TEMP_FUNCTION 27
+#define TAC_CALL 28
+#define TAC_PUSH_ARG 29
 typedef struct tac_node {
     int type;
+    int callId;
     HASH_NODE *res;
     HASH_NODE *op1;
     HASH_NODE *op2;
     struct tac_node *prev;
     struct tac_node *next;
 } TAC;
+TAC *TAC_make_push_arg(TAC *arg, AST *func_name, int callId);
+TAC *TAC_make_func_call(AST *func_name, TAC *args, int callId);
 TAC *TAC_make_return(TAC *expression);
 TAC *TAC_make_ary_index(AST *id, TAC *index);
 TAC *TAC_make_func_declaration(AST *node, TAC *func_params, TAC *func_body);
@@ -51,6 +57,6 @@ TAC* tacCreate(int type, HASH_NODE *res, HASH_NODE *op1, HASH_NODE *op2);
 void tacPrintSingle( TAC *tac);
 void tacPrintBackwards(TAC *tac);
 TAC* tacJoin(TAC *l1, TAC *l2);
-TAC* generateCode (AST *ast);
+TAC* generateCode (AST *ast,AST *FUNC);
 
 #endif //ETAPA1_TACS_H

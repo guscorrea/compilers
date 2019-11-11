@@ -51,6 +51,9 @@ void tacPrintSingle( TAC *tac) {
         case TAC_JMP: fprintf(stderr, "TAC_JMP"); break;
         case TAC_JZ: fprintf(stderr, "TAC_JZ"); break;
         case TAC_WHILE: fprintf(stderr, "TAC_WHILE"); break;
+        case TAC_PUSH_ARG:fprintf(stderr, "TAC_PUSH_ARG"); break;
+        case TAC_CALL:fprintf(stderr, "TAC_CALL"); break;
+        case TAC_TEMP_FUNCTION:fprintf(stderr, "TAC_TEMP_FUNCTION"); break;
         //TODO: finish print cases
         default: fprintf(stderr, "UNKNOWN - type %i", tac->type); break;
     }
@@ -79,14 +82,21 @@ TAC* tacJoin(TAC *l1, TAC *l2) {
     return l2;
 }
 
-TAC* generateCode (AST *ast) {
+TAC* generateCode (AST *ast,AST *FUNC) {
     int i;
     TAC *code[MAX_SONS];
 
     if(!ast) return 0;
-
+    if(ast->type ==AST_FUNC){
+            call_count++;
+        }
     for (int i = 0; i < MAX_SONS; ++i)
-        code[i] = generateCode(ast->son[i]);
+        if(ast->type ==AST_FUNC){
+            code[i] = generateCode(ast->son[i],ast);
+        }
+        else{
+            code[i] = generateCode(ast->son[i],FUNC);
+        }
 
         switch (ast->type) {
             case AST_SYMBOL: return tacCreate(TAC_SYMBOL, ast->symbol, 0, 0); break;
@@ -146,22 +156,32 @@ TAC* generateCode (AST *ast) {
 
             case AST_READ:
                 return TAC_make_read(codes[0]); */
-            /*case AST_FUNC_CALL:
-                return TAC_make_func_call(codes[0], codes[1], node->callId);
+            case AST_FUNC:
+                return TAC_make_func_call(ast, code[0],call_count);break;
+
             case AST_FUNDPARMSI:
-                call_count++;
                 if(code[1]==NULL){
-                    return code[0]
+                    return code[0];
                 }
                 else{
-                return tacJoin(code[0], code[1])
-                }
-            case AST_FUNCPARF:
                 return tacJoin(code[0], code[1]);
-            case AST_ARG:*/
+                }
+                break;
+            case AST_FUNDPARMS:
+                if(code[1]==NULL){
+                    return code[0];
+                }
+                else{
+                return tacJoin(code[0], code[1]);
+                }
+                break;
+            case AST_FUNCPARF:
+                return tacJoin(code[1], TAC_make_push_arg(code[0],FUNC, call_count));
+                break;
 
-
-            //TODO: finish the operations
+            case AST_ARG:
+                return TAC_make_push_arg(code[0], FUNC, call_count);break;
+            //TODO: finish the operations*/
             default: return tacJoin(tacJoin(tacJoin(code[0], code[1]), code[2]), code[3]); break;
         }
         return 0;
@@ -236,6 +256,19 @@ TAC* make_while(TAC *condition, TAC *body) {
     return tacJoin(beginLabel, tacJoin(condition, tacJoin(goto_end_if_zero, tacJoin(body, tacJoin(goto_begin, endLabel)))));
 }
 
+TAC *TAC_make_func_call(AST *func_name, TAC *args, int callId) {
+    TAC *temp_tac = tacCreate(TAC_TEMP_FUNCTION, makeTemp(), NULL, NULL);
+    TAC *func_call = tacCreate(TAC_CALL, temp_tac->res, func_name->symbol, NULL);
+    func_call->callId = callId;
+    fprintf(stderr, "%i",callId);
+    return tacJoin(tacJoin(temp_tac, args), func_call);
+}
+TAC *TAC_make_push_arg(TAC *arg, AST *func_name, int callId) {
+    TAC *push_arg = tacCreate(TAC_PUSH_ARG, arg->res, func_name->symbol, NULL);
+    push_arg->callId = callId;
+     fprintf(stderr, " ARG:%i /n",callId);
+    return tacJoin(arg, push_arg);
+}
 
 
 
