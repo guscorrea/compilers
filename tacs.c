@@ -32,7 +32,6 @@ void tacPrintSingle( TAC *tac) {
         case TAC_MUL: fprintf(stderr, "TAC_MUL"); break;
         case TAC_DIV: fprintf(stderr, "TAC_DIV"); break;
         case TAC_MOVE: fprintf(stderr, "TAC_MOVE"); break;
-        case TAC_IF: fprintf(stderr, "TAC_IF"); break;
         case TAC_AND: fprintf(stderr, "TAC_AND"); break;
         case TAC_OR: fprintf(stderr, "TAC_OR"); break;
         case TAC_NOT: fprintf(stderr, "TAC_NOT"); break;
@@ -110,74 +109,29 @@ TAC* generateCode (AST *ast,AST *FUNC) {
             case AST_GE: return makeBinOp(TAC_GE, code[0], code[1]); break;
             case AST_AND: return makeBinOp(TAC_AND, code[0], code[1]); break;
             case AST_OR: return makeBinOp(TAC_OR, code[0], code[1]); break;
-            case AST_NOT: return makeBinOp(TAC_NOT, code[0], code[1]); break;
+            case AST_NOT: return tacJoin(code[0], tacCreate(TAC_NOT, makeTemp(), code[0]?code[0]->res:0,0));
             case AST_EQ: return makeBinOp(TAC_EQ, code[0], code[1]); break;
             case AST_DIF: return makeBinOp(TAC_DIF, code[0], code[1]); break;
-            case AST_IF: return makeIfThen(TAC_IF, code[0], code[1]);  break;
+            case AST_IF: return makeIfThen(TAC_IFZ, code[0], code[1]);  break;
             case AST_WHILE: return makeWhile(code[0], code[1]); break;
             case AST_IFELSE: return makeIfThenElse(code[0], code[1], code[2]);
             case AST_ARRAYASS: return TAC_make_assign(code[0],code[1], ast);break;
             case AST_VECREAD: return TAC_make_ary_index(ast, code[0]);break;
             case AST_RETURN: return TAC_make_return(code[0]);
             case AST_READ: return  tacCreate(TAC_READ, ast->symbol, NULL, NULL);
-            /*case AST_DEFVEC:
-                TAC *ary_assign_tac = tacCreate(TAC_ARRAY_ASSIGN ,ast->symbol,
-                                     code[1]->res, code[2]->res);
-                return TAC_join(TAC_join(TAC_join(code[0], code[2]), expression), ary_assign_tac);break;
-        */
+            //case AST_FOR: return makeFor(ast->symbol, code[0], code[1], code[3]);
+            //case AST_DEFVEC: return
             case AST_PRINT: return code[0];break;
-            case AST_PRINTARRAY:
-                if(code[1]==NULL){
-                    return TAC_make_print(code[0]);
-                }
-                else{
-                    return tacJoin(TAC_make_print(code[0]), code[1]);
-                }
-                break;
-            case AST_SEQLITI:
-                return code[0];break;
-            case AST_SEQLIT:
-                if(code[1]==NULL){
-                    return code[0];
-                }
-                else{
-                return tacJoin(code[0], code[1]);
-                }break;
-
-            case AST_FUNDEC:
-                return TAC_make_func_declaration(ast, code[1], code[2]);break;
-/*            case AST_FUNC:
-            case AST_FOR:
-
-            case AST_READ:
-                return TAC_make_read(codes[0]); */
-            case AST_FUNC:
-                return TAC_make_func_call(ast, code[0],call_count);break;
-
-            case AST_FUNDPARMSI:
-                if(code[1]==NULL){
-                    return code[0];
-                }
-                else{
-                return tacJoin(code[0], code[1]);
-                }
-                break;
-            case AST_FUNDPARMS:
-                if(code[1]==NULL){
-                    return code[0];
-                }
-                else{
-                return tacJoin(code[0], code[1]);
-                }
-                break;
-            case AST_PARAMETER:
-                return tacCreate(TAC_SYMBOL, ast->symbol, 0, 0); break;
-            case AST_FUNCPARF:
-                return tacJoin(code[1], TAC_make_push_arg(code[0],FUNC, call_count));
-                break;
-
-            case AST_ARG:
-                return TAC_make_push_arg(code[0], FUNC, call_count);break;
+            case AST_PRINTARRAY: if(code[1]==NULL){ return TAC_make_print(code[0]); } else { return tacJoin(TAC_make_print(code[0]), code[1]); } break;
+            case AST_SEQLITI: return code[0];break;
+            case AST_SEQLIT: if(code[1]==NULL){ return code[0]; } else { return tacJoin(code[0], code[1]); } break;
+            case AST_FUNDEC: return TAC_make_func_declaration(ast, code[1], code[2]);break;
+            case AST_FUNC: return TAC_make_func_call(ast, code[0],call_count);break;
+            case AST_FUNDPARMSI: if(code[1]==NULL){ return code[0]; } else { return tacJoin(code[0], code[1]); } break;
+            case AST_FUNDPARMS: if(code[1]==NULL){ return code[0]; } else { return tacJoin(code[0], code[1]); } break;
+            case AST_PARAMETER: return tacCreate(TAC_SYMBOL, ast->symbol, 0, 0); break;
+            case AST_FUNCPARF: return tacJoin(code[1], TAC_make_push_arg(code[0],FUNC, call_count)); break;
+            case AST_ARG: return TAC_make_push_arg(code[0], FUNC, call_count);break;
             //TODO: finish the operations*/
             default: return tacJoin(tacJoin(tacJoin(code[0], code[1]), code[2]), code[3]); break;
         }
@@ -237,7 +191,7 @@ TAC* makeIfThen(int type, TAC* code0, TAC* code1){
     TAC* taclabel = 0;
 
     label = makeLabel();
-    tacif = tacCreate(TAC_IF, label, code0?code0->res:0,0);
+    tacif = tacCreate(TAC_IFZ, label, code0?code0->res:0,0);
     taclabel = tacCreate(TAC_LABEL, label, 0, 0);
 
     return tacJoin(tacJoin(tacJoin(code0, tacif), code1), taclabel);
@@ -263,6 +217,24 @@ TAC* makeWhile(TAC *condition, TAC *body) {
     TAC *goto_begin = tacCreate(TAC_JUMP, startNode, 0, 0);
     return tacJoin(beginLabel, tacJoin(condition, tacJoin(goto_end_if_zero, tacJoin(body, tacJoin(goto_begin, endLabel)))));
 }
+
+TAC* makeFor(HASH_NODE* symbol, TAC* code0, TAC* code1, TAC* code2, TAC* code3){
+    HASH_NODE* startLabel = makeLabel();
+    HASH_NODE* endLabel = makeLabel();
+    TAC* tacBegin = tacCreate(TAC_LABEL, startLabel, 0, 0);
+    TAC* tacEnd = tacCreate(TAC_LABEL, endLabel, 0, 0);
+
+    TAC* goto_end_if_zero = tacCreate(TAC_IFZ, endLabel, symbol, 0);
+    TAC* goto_begin = tacCreate(TAC_JUMP, startLabel, 0, 0);
+
+    TAC* moveInitial = tacCreate(TAC_MOVE, symbol, code0?code0->res:0, 0);
+    TAC* tacIncrement = tacCreate(TAC_ADD, symbol, code2?code2->res:0, 0);
+    TAC* moveIncrement = tacCreate(TAC_MOVE, symbol, tacIncrement?tacIncrement->res:0, 0);
+    TAC* tacSymbol = tacCreate(TAC_SYMBOL, symbol, 0, 0);
+    TAC* tacCompare = makeBinOp(TAC_DIF, tacSymbol, code1);
+    return 0;
+
+    }
 
 TAC *TAC_make_func_call(AST *func_name, TAC *args, int callId) {
     TAC *temp_tac = tacCreate(TAC_TEMP_FUNCTION, makeTemp(), NULL, NULL);
