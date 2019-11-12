@@ -175,6 +175,8 @@ TAC* generateCode (AST *ast,AST *FUNC) {
                 return tacJoin(code[0], code[1]);
                 }
                 break;
+            case AST_PARAMETER:
+                return tacCreate(TAC_SYMBOL, ast->symbol, 0, 0); break;
             case AST_FUNCPARF:
                 return tacJoin(code[1], TAC_make_push_arg(code[0],FUNC, call_count));
                 break;
