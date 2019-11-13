@@ -36,6 +36,8 @@
 #define TAC_TEMP_FUNCTION 27
 #define TAC_CALL 28
 #define TAC_PUSH_ARG 29
+#define TAC_FOR 30
+#define TAC_BREAK 31
 typedef struct tac_node {
     int type;
     int callId;
