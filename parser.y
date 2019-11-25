@@ -11,6 +11,7 @@ int yyerror(char *msg);
 int getLineNumber(void);
 
 FILE *outputFile = NULL;
+TAC* tac = NULL;
 
 %}
 
@@ -87,7 +88,15 @@ FILE *outputFile = NULL;
 %left '*' '/'
 
 %%
-main: programa {astreePrint($1,0,outputFile); checkAndSetTypes($1); checkUndeclared();checkOperands($1); fprintf(stderr, "%d semantic errors.\n", getSemanticErrors()); tacPrintBackwards(generateCode($1,NULL)); }
+main: programa {astreePrint($1,0,outputFile);
+ checkAndSetTypes($1);
+  checkUndeclared();
+  checkOperands($1);
+   fprintf(stderr, "%d semantic errors.\n", getSemanticErrors());
+    tac = generateCode($1, 0, 0);
+     tacPrintForwards(tac);
+      generateASM(tac, fopen("asm.s", "w"));
+       fclose(fout); }
 ;
 programa: decl programa {$$ = astreeCreate(AST_DEC,0,$1,$2,0,0);}
 | {$$ = 0;}

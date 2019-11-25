@@ -59,5 +59,6 @@ void tacPrintSingle( TAC *tac);
 void tacPrintBackwards(TAC *tac);
 TAC* tacJoin(TAC *l1, TAC *l2);
 TAC* generateCode (AST *ast,AST *FUNC);
+void generateASM(TAC* tac, FILE* fout);
 
 #endif //ETAPA1_TACS_H
