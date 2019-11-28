@@ -93,9 +93,10 @@ main: programa {astreePrint($1,0,outputFile);
   checkUndeclared();
   checkOperands($1);
    fprintf(stderr, "%d semantic errors.\n", getSemanticErrors());
-    tac = generateCode($1, 0, 0);
-     tacPrintForwards(tac);
-      generateASM(tac, fopen("asm.s", "w"));
+    tac = generateCode($1, 0);
+     tacPrintBackwards(tac);
+     FILE* fout = fopen("asm.s", "w");
+      generateASM(tac, fout);
        fclose(fout); }
 ;
 programa: decl programa {$$ = astreeCreate(AST_DEC,0,$1,$2,0,0);}

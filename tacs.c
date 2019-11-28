@@ -298,12 +298,6 @@ void generateASM(TAC* tac, FILE* fout) {
                           "\tcall\tprintf\n",
                     tac->res->text);
             break;
-        case TAC_MOVE:
-            fprintf(fout, "## TAC_MOVE ##\n"
-                          "\tmovl\t%s(%%rip), %%eax\n"
-                          "\tmovl\t%%eax, %s(%%rip)\n",
-                    tac->op1->text, tac->res->text);
-            break;
         case TAC_MUL:
             fprintf(fout, "## TAC_MUL ##\n"
                           "\tmovl\t%s(%%rip), %%edx\n"
@@ -333,7 +327,7 @@ void generateASM(TAC* tac, FILE* fout) {
                           "\tjmp\t.%s\n",
                     tac->res->text);
             break;
-        case TAC_RETURN:
+        case TAC_RET:
             fprintf(fout, "## TAC_RETURN ##\n"
                           "\tmovl\t%s(%%rip), %%eax\n", tac->res->text);
             break;
@@ -342,6 +336,24 @@ void generateASM(TAC* tac, FILE* fout) {
                 fprintf(fout, "## TAC_BREAK ##\n"
                               "\tjmp\t.%s\n", tac->res->text);
             }
+            break;
+        case TAC_BEGIN_FUNC: fprintf(fout, "\n## TAC_BEGIN_FUNC ##\n"
+                                         "\t.globl\t%s\n"
+                                         "\t.type\t%s, @function\n"
+                                         "%s:\n"
+                                         ".LFB%d:\n"
+                                         "\tpushq\t%%rbp\n"
+                                         "\tmovq\t%%rsp, %%rbp\n", tac->res->text,
+                                     tac->res->text,
+                                     tac->res->text,
+                                     0); //NUMERO DA FUNCAO AQUI
+            break;
+        case TAC_END_FUNC: fprintf(fout, "## TAC_END_FUNC ##\n"
+                                       "\tpopq\t%%rbp\n"
+                                       "\tret\n"
+                                       ".LFE%d:\n"
+                                       "\t.size\t%s, .-%s\n", 0, tac->res->text,
+                                   tac->res->text); // NUMERO DA FUNCAO
             break;
         default:
             break;
