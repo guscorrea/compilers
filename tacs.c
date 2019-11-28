@@ -261,6 +261,7 @@ TAC *TAC_make_push_arg(TAC *arg, AST *func_name, int callId) {
 }
 
 void generateASM(TAC* tac, FILE* fout) {
+    static int funclabel = 0;
     if (!tac) return;
 
     if (tac->prev)
@@ -346,14 +347,15 @@ void generateASM(TAC* tac, FILE* fout) {
                                          "\tmovq\t%%rsp, %%rbp\n", tac->res->text,
                                      tac->res->text,
                                      tac->res->text,
-                                     0); //NUMERO DA FUNCAO AQUI
+                                     funclabel);
             break;
         case TAC_END_FUNC: fprintf(fout, "## TAC_END_FUNC ##\n"
                                        "\tpopq\t%%rbp\n"
                                        "\tret\n"
                                        ".LFE%d:\n"
-                                       "\t.size\t%s, .-%s\n", 0, tac->res->text,
-                                   tac->res->text); // NUMERO DA FUNCAO
+                                       "\t.size\t%s, .-%s\n", funclabel, tac->res->text,
+                                   tac->res->text);
+        funclabel++;
             break;
         default:
             break;
