@@ -57,6 +57,7 @@ void tacPrintSingle( TAC *tac) {
         case TAC_TEMP_FUNCTION:fprintf(stderr, "TAC_TEMP_FUNCTION"); break;
         case TAC_FOR:fprintf(stderr, "TAC_FOR"); break;
         case TAC_BREAK:fprintf(stderr, "TAC_BREAK"); break;
+        case TAC_DEFVAR:fprintf(stderr, "TAC_DEFVAR"); break;
         default: fprintf(stderr, "UNKNOWN - type %i", tac->type); break;
     }
     if (tac->res) fprintf(stderr, ",%s", tac->res->text);
@@ -134,6 +135,7 @@ TAC* generateCode (AST *ast,AST *FUNC) {
             case AST_FUNCPARF: return tacJoin(code[1], TAC_make_push_arg(code[0],FUNC, call_count)); break;
             case AST_ARG: return TAC_make_push_arg(code[0], FUNC, call_count);break;
             case AST_BREAK: return tacCreate(TAC_BREAK, 0, 0, 0); break;
+            case AST_DEF: return tacCreate(TAC_DEFVAR, ast->symbol, code[1]?code[1]->res:0, 0);break;
             default: return tacJoin(tacJoin(tacJoin(code[0], code[1]), code[2]), code[3]); break;
         }
         return 0;
@@ -262,10 +264,16 @@ TAC *TAC_make_push_arg(TAC *arg, AST *func_name, int callId) {
 
 void generateASM(TAC* tac, FILE* fout) {
     static int funclabel = 0;
-    if (!tac) return;
-
-    if (tac->prev)
+    if (!tac)return;
+    
+    if(!(tac->prev)){
+        fprintf(fout,".LC0:\n"
+	".string\t\"%%i\"\n"
+	"\t.text\n");
+    }
+    if (tac->prev){
         generateASM(tac->prev, fout);
+    }
 
     switch (tac->type) {
         case TAC_MOVE:
@@ -294,10 +302,45 @@ void generateASM(TAC* tac, FILE* fout) {
                     tac->res->text);
             break;
         case TAC_PRINT:
-            fprintf(fout, "## TAC_PRINT ##\n"
-                          "\tleaq\t%s(%%rip), %%rdi\n"
-                          "\tcall\tprintf\n",
-                    tac->res->text);
+         switch(tac->res->type){
+
+       case SYMBOL_LITINT: 
+         fprintf(fout,"## TAC_PRINT ##\n"
+         "movl\t$%s,\t%%esi\n"
+	"leaq\t.LC0(%%rip),\t%%rdi\n"
+	"movl\t$0,\t%%eax\n"
+	"call\tprintf@PLT\n",tac->res->text); break;
+        case SYMBOL_LITBOOL:{
+            int value = 0;
+                    if(strcmp(tac->res->text, "TRUE") == 0)
+                        value = 1;
+        fprintf(fout, "## TAC_PRINT ##\n"
+                      "movl\t$%d,\t%%esi\n"
+	"leaq\t.LC0(%%rip),\t%%rdi\n"
+	"movl\t$0,\t%%eax\n"
+	"call\tprintf@PLT\n",
+                    value);
+        }
+                    break;
+
+        case SYMBOL_SCALAR:{
+            HASH_NODE* var = hashFind(tac->res->text);
+            switch (var->datatype) {
+                case DATATYPE_INT:
+                 fprintf(fout,"movl\t%s(%%rip),\t%%eax\n"
+	"movl\t%%eax,\t%%esi\n"
+	"leaq\t.LC0(%%rip),\t%%rdi\n"
+	"movl\t$0,\t%%eax\n"
+	"call\tprintf@PLT\n",tac->res->text);break;
+               case DATATYPE_BOOL:
+               fprintf(fout,"movl\t%s(%%rip),\t%%eax\n"
+	"movl\t%%eax,\t%%esi\n"
+	"leaq\t.LC0(%%rip),\t%%rdi\n"
+	"movl\t$0,\t%%eax\n"
+	"call\tprintf@PLT\n",tac->res->text);break;
+            }
+
+         }break;}
             break;
         case TAC_MUL:
             fprintf(fout, "## TAC_MUL ##\n"
@@ -357,6 +400,40 @@ void generateASM(TAC* tac, FILE* fout) {
                                    tac->res->text);
         funclabel++;
             break;
+        case TAC_DEFVAR:{
+            HASH_NODE* hash = hashFind(tac->res->text);
+            switch(hash->datatype){
+                case DATATYPE_INT:
+                    fprintf(fout, ".globl\t%s\n"
+	".align\t8\n"
+	".type\t%s,\t@object\n"
+	".size\t%s,\t8\n"
+"i:\n"
+	"\t.quad\t%s\n", tac->res->text,tac->res->text,tac->res->text,tac->op1->text);
+                break;
+                case DATATYPE_LONG:
+                break;
+                case DATATYPE_BOOL:{
+                 int value = 0;
+                    if(strcmp(tac->op1->text, "TRUE") == 0)
+                        value = 1;
+                fprintf(fout, ".globl\t%s\n"
+	".align\t8\n"
+	".type\t%s,\t@object\n"
+	".size\t%s,\t8\n"
+"i:\n"
+	"\t.quad\t%d\n", tac->res->text,tac->res->text,tac->res->text,value);
+                }
+                break;
+                case DATATYPE_BYTE:
+
+                break;
+                case DATATYPE_FLOAT:
+                break;
+                default:
+                break;
+            }
+        }
         default:
             break;
     }

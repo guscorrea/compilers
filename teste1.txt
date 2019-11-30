@@ -1,11 +1,4 @@
+bool i = FALSE;
 int main(){
-
-}
-
-int func() {
-
-}
-
-int foo() {
-
+ print i;
 }

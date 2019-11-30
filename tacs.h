@@ -38,12 +38,14 @@
 #define TAC_PUSH_ARG 29
 #define TAC_FOR 30
 #define TAC_BREAK 31
+#define TAC_DEFVAR 32
 typedef struct tac_node {
     int type;
     int callId;
     HASH_NODE *res;
     HASH_NODE *op1;
     HASH_NODE *op2;
+    int printfId;
     struct tac_node *prev;
     struct tac_node *next;
 } TAC;
