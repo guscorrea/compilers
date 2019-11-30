@@ -357,6 +357,12 @@ void generateASM(TAC* tac, FILE* fout) {
                                    tac->res->text);
         funclabel++;
             break;
+        case TAC_READ: fprintf(fout, "## TAC_READ ##\n"
+                                       "\tmovl\t%s(%%rip), %%eax\n"
+                                       "\tmovl\t%%eax, %%edi\n"
+                                       "\tmovl\t$%d, %%eax\n"
+                                       "\tcall\tread@PLT\n"
+                                       "\tmovl\t$%d, %%eax\n", tac->res->text, 0, 0); //revisar
         default:
             break;
     }

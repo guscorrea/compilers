@@ -1,11 +1,4 @@
+int b=1;
 int main(){
-
-}
-
-int func() {
-
-}
-
-int foo() {
-
+    read b;
 }
