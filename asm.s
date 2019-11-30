@@ -21,6 +21,7 @@ leaq	.LC0(%rip),	%rdi
 movl	$0,	%eax
 call	printf@PLT
 ## TAC_END_FUNC ##
+	movl	$0, %eax
 	popq	%rbp
 	ret
 .LFE0:

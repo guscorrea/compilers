@@ -277,11 +277,18 @@ void generateASM(TAC* tac, FILE* fout) {
 
     switch (tac->type) {
         case TAC_MOVE:
-            fprintf(fout, "## TAC_MOVE ##\n"
-                          "\tmovl\t%s(%%rip), %%eax\n"
-                          "\tmovl\t%%eax, %s(%%rip)\n",
-                    tac->op1->text,
-                    tac->res->text);
+            if(tac->op1->type == SYMBOL_LITINT) {
+                fprintf(fout, "## TAC_MOVE ##\n"
+                              "\tmovl\t$%s, %s(%%rip)\n",
+                        tac->op1->text,
+                        tac->res->text);
+            } else {
+                fprintf(fout, "## TAC_MOVE ##\n"
+                              "\tmovl\t%s(%%rip), %%eax\n"
+                              "\tmovl\t%%eax, %s(%%rip)\n",
+                        tac->op1->text,
+                        tac->res->text);
+            }
             break;
         case TAC_ADD:
             fprintf(fout, "## TAC_ADD ##\n"
@@ -393,10 +400,11 @@ void generateASM(TAC* tac, FILE* fout) {
                                      funclabel);
             break;
         case TAC_END_FUNC: fprintf(fout, "## TAC_END_FUNC ##\n"
+                                         "\tmovl\t$%d, %%eax\n"
                                        "\tpopq\t%%rbp\n"
                                        "\tret\n"
                                        ".LFE%d:\n"
-                                       "\t.size\t%s, .-%s\n", funclabel, tac->res->text,
+                                       "\t.size\t%s, .-%s\n", 0, funclabel, tac->res->text,
                                    tac->res->text);
         funclabel++;
             break;
@@ -434,6 +442,12 @@ void generateASM(TAC* tac, FILE* fout) {
                 break;
             }
         }
+        case TAC_READ: fprintf(fout, "## TAC_READ ##\n"
+                                       "\tmovl\t%s(%%rip), %%eax\n"
+                                       "\tmovl\t%%eax, %%edi\n"
+                                       "\tmovl\t$%d, %%eax\n"
+                                       "\tcall\tread@PLT\n"
+                                       "\tmovl\t$%d, %%eax\n", tac->res->text, 0, 0); //revisar
         default:
             break;
     }
