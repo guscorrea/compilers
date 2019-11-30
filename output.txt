@@ -1,1 +1,1 @@
-    int  b =  1;       int  main ()   {          read  b      ;}
+    int  b =  3;       int  c =   1;          int  main ()    {            b  =        c      ;        c  =         2       ;}
