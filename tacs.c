@@ -13,7 +13,17 @@ TAC* makeWhile(TAC *condition, TAC *body);
 TAC* makeFor(HASH_NODE* symbol, TAC* begin, TAC* condition, TAC* increment, TAC* body);
 TAC* makeIfThenElse(TAC *condition, TAC *if_true, TAC *if_false);
 int OpCalculation(TAC* tac);
+int calculateTemps(HASH_NODE* op);
 void symbolScalarCase(TAC* tac, FILE* fout);
+int TempInt(char * temp);
+
+int TempInt(char * temp){
+    char  token[sizeof(temp)];
+    strncpy(token,temp,sizeof(temp));
+    char * token2 = strtok(token, " ");
+    token2 = strtok(NULL, " ");
+    return atoi(token2);
+}
 
 TAC* tacCreate(int type, HASH_NODE *res, HASH_NODE *op1, HASH_NODE *op2) {
     TAC* newtac;
@@ -291,9 +301,8 @@ void generateASM(TAC* tac, FILE* fout) {
                         tac->res->text);
             } else {
                 fprintf(fout, "## TAC_MOVE ##\n"
-                              "\tmovl\t%s(%%rip), %%eax\n"
-                              "\tmovl\t%%eax, %s(%%rip)\n",
-                        tac->op1->text,
+                              "\tmovl\t$%d, %s(%%rip)\n",
+                        temps[0],
                         tac->res->text);
             }
             break;
@@ -467,48 +476,28 @@ void symbolScalarCase(TAC* tac, FILE* fout) {
             break;
     }
 }
-int TempInt(char * temp){
-   char  token[sizeof(temp)];
-   strncpy(token,temp,sizeof(temp));
-   char * token2 = strtok(token, " ");
-   token2 = strtok(NULL, " ");
-   return atoi(token2);
+
+int calculateTemps(HASH_NODE* op) {
+    int temp;
+    temp = atoi(op->text);
+
+    if(op->text[0]=='T' && op->text[4]==':' )
+        temp = temps[TempInt(op->text)];
+
+    if(!strcmp(op->text,"TRUE"))
+        temp =1;
+
+    if(!strcmp(op->text,"FALSE"))
+        temp = 0;
+
+    return temp;
 }
+
 int OpCalculation(TAC* tac){
-    int temp1;
-    int temp2;
-    int tempres;
+    int temp1, temp2, tempres;
     tempres = TempInt(tac->res->text);
-    if(tac->op1->text[0]=='T' && tac->op1->text[4]==':' ){
-         printf("passou");
-         temp1 = temps[TempInt(tac->op1->text)];
-        }
-    else{
-         if(!strcmp(tac->op1->text,"TRUE")){
-            temp1=1;
-         }
-         else if(!strcmp(tac->op1->text,"FALSE")){
-             temp1=0;
-         }
-         else{
-         temp1 = atoi(tac->op1->text);
-         }
-        }
-    if(tac->op2->text[0]=='T' && tac->op2->text[4]==':' ){
-        printf("passou");
-        temp2 = temps[TempInt(tac->op2->text)];
-            }
-    else{
-        if(!strcmp(tac->op2->text,"TRUE")){
-            temp2=1;
-         }
-         else if(!strcmp(tac->op2->text,"FALSE")){
-             temp2=0;
-         }
-         else{
-        temp2 = atoi(tac->op2->text);
-         }
-        }
+    temp1 = calculateTemps(tac->op1);
+    temp2 = calculateTemps(tac->op2);
     switch(tac->type){
                 case TAC_ADD:
                     temps[tempres]= temp1+ temp2; break;

@@ -16,8 +16,7 @@ main:
 	pushq	%rbp
 	movq	%rsp, %rbp
 ## TAC_MOVE ##
-	movl	Temp: 0(%rip), %eax
-	movl	%eax, x(%rip)
+	movl	$4, x(%rip)
 ## TAC_PRINT DATATYPE INT ## ##
 	movl	x(%rip),	%eax
 	movl	%eax,	%esi
