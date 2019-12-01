@@ -87,6 +87,6 @@ HASH_NODE * makeLabel(void) {
     static int serialNumber = 0;
     static char name[100];
 
-    sprintf(name, "Label: %d", serialNumber++);
+    sprintf(name, "Label%d", serialNumber++);
     return hashInsert(name, 0);
 }
