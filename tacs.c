@@ -3,6 +3,9 @@
 //
 
 #include "tacs.h"
+#include <string.h>
+
+int temps[10000]={0};
 static int call_count = 0;
 TAC* makeBinOp(int type, TAC* code0, TAC* code1);
 TAC* makeIfThen(int type, TAC* code0, TAC* code1);
@@ -263,6 +266,9 @@ TAC *TAC_make_push_arg(TAC *arg, AST *func_name, int callId) {
 }
 
 void generateASM(TAC* tac, FILE* fout) {
+    int temp1;
+    int temp2;
+    int tempres;
     static int funclabel = 0;
     if (!tac)return;
     
@@ -290,25 +296,44 @@ void generateASM(TAC* tac, FILE* fout) {
                         tac->res->text);
             }
             break;
+        case TAC_DIV:
+        case TAC_SUB:
         case TAC_ADD:
-            fprintf(fout, "## TAC_ADD ##\n"
-                          "\tmovl\t%s(%%rip), %%edx\n"
-                          "\tmovl\t%s(%%rip), %%eax\n"
-                          "\taddl\t%%edx, %%eax\n"
-                          "\tmovl\t%%eax, %s(%%rip)\n",
-                    tac->op1->text,
-                    tac->op2->text,
-                    tac->res->text);
+        case TAC_MUL:
         case TAC_DIF:
-            fprintf(fout, "## TAC_DIF ##\n"
-                          "\tmovl\t%s(%%rip), %%edx\n"
-                          "\tmovl\t%s(%%rip), %%eax\n"
-                          "\tsubl\t%%eax, %%edx\n"
-                          "\tmovl\t%%edx, %s(%%rip)\n", tac->op1->text,
-                    tac->op2->text,
-                    tac->res->text);
+        case TAC_AND:
+        case TAC_EQ:
+        case TAC_GE:
+        case TAC_LE:
+        case TAC_OR:
+            OpCalculation(tac);
             break;
+        case TAC_NOT:
+            tempres = TempInt(tac->res->text);
+            if(tac->op1->text[0]=='T' && tac->op1->text[4]==':' ){
+                temp1 = temps[TempInt(tac->op1->text)];
+            }
+            else{
+            if(!strcmp(tac->op1->text,"TRUE")){
+                temp1=1;
+            }
+            else if(!strcmp(tac->op1->text,"FALSE")){
+                 temp1=0;
+            }
+            else{
+            temp1 = atoi(tac->op1->text);
+            }
+            temps[tempres]= !temp1;
+        }
+        break;
         case TAC_PRINT:
+        if(tac->res->text[0]=='T'&&tac->res->text[4]==':'){
+            fprintf(fout,"## TAC_PRINT ##\n"
+         "movl\t$%d,\t%%esi\n"
+	"leaq\t.LC0(%%rip),\t%%rdi\n"
+	"movl\t$0,\t%%eax\n"
+	"call\tprintf@PLT\n",temps[TempInt(tac->res->text)]); break;
+        }
          switch(tac->res->type){
 
        case SYMBOL_LITINT: 
@@ -348,25 +373,6 @@ void generateASM(TAC* tac, FILE* fout) {
             }
 
          }break;}
-            break;
-        case TAC_MUL:
-            fprintf(fout, "## TAC_MUL ##\n"
-                          "\tmovl\t%s(%%rip), %%edx\n"
-                          "\tmovl\t%s(%%rip), %%eax\n"
-                          "\timull\t%%edx, %%eax\n"
-                          "\tmovl\t%%eax, %s(%%rip)\n", tac->op1->text,
-                    tac->op2->text,
-                    tac->res->text);
-            break;
-        case TAC_DIV:
-            fprintf(fout, "## TAC_DIV ##\n"
-                          "\tmovl\t%s(%%rip), %%eax\n"
-                          "\tmovl\t%s(%%rip), %%ecx\n"
-                          "\tcltd\n"
-                          "\tidivl\t%%ecx\n"
-                          "\tmovl\t%%eax, %s(%%rip)\n", tac->op1->text,
-                    tac->op2->text,
-                    tac->res->text);
             break;
         case TAC_LABEL:
             fprintf(fout, "## TAC_LABEL ##\n"
@@ -416,8 +422,8 @@ void generateASM(TAC* tac, FILE* fout) {
 	".align\t8\n"
 	".type\t%s,\t@object\n"
 	".size\t%s,\t8\n"
-"i:\n"
-	"\t.quad\t%s\n", tac->res->text,tac->res->text,tac->res->text,tac->op1->text);
+"%s:\n"
+	"\t.quad\t%s\n", tac->res->text,tac->res->text,tac->res->text,tac->res->text,tac->op1->text);
                 break;
                 case DATATYPE_LONG:
                 break;
@@ -442,6 +448,7 @@ void generateASM(TAC* tac, FILE* fout) {
                 break;
             }
         }
+        break;
         case TAC_READ: fprintf(fout, "## TAC_READ ##\n"
                                        "\tmovl\t%s(%%rip), %%eax\n"
                                        "\tmovl\t%%eax, %%edi\n"
@@ -452,8 +459,72 @@ void generateASM(TAC* tac, FILE* fout) {
             break;
     }
 }
-
-
-
-
+int TempInt(char * temp){
+   char  token[sizeof(temp)];
+   strncpy(token,temp,sizeof(temp));
+   char * token2 = strtok(token, " ");
+   token2 = strtok(NULL, " ");
+   return atoi(token2);
+}
+int OpCalculation(TAC* tac){
+    int temp1;
+    int temp2;
+    int tempres;
+    tempres = TempInt(tac->res->text);
+    if(tac->op1->text[0]=='T' && tac->op1->text[4]==':' ){
+         printf("passou");
+         temp1 = temps[TempInt(tac->op1->text)];
+        }
+    else{
+         if(!strcmp(tac->op1->text,"TRUE")){
+            temp1=1;
+         }
+         else if(!strcmp(tac->op1->text,"FALSE")){
+             temp1=0;
+         }
+         else{
+         temp1 = atoi(tac->op1->text);
+         }
+        }
+    if(tac->op2->text[0]=='T' && tac->op2->text[4]==':' ){
+        printf("passou");
+        temp2 = temps[TempInt(tac->op2->text)];
+            }
+    else{
+        if(!strcmp(tac->op2->text,"TRUE")){
+            temp2=1;
+         }
+         else if(!strcmp(tac->op2->text,"FALSE")){
+             temp2=0;
+         }
+         else{
+        temp2 = atoi(tac->op2->text);
+         }
+        }
+    switch(tac->type){
+                case TAC_ADD:
+                    temps[tempres]= temp1+ temp2; break;
+                case TAC_DIF:
+                    temps[tempres]= temp1!= temp2; break;
+                case TAC_DIV:
+                    temps[tempres]= temp1/ temp2; break;
+                case TAC_MUL:
+                    temps[tempres]= temp1* temp2; break;
+                case TAC_AND:
+                    temps[tempres]= temp1&& temp2;
+                    printf("%d,",temps[tempres]); break;
+                case TAC_EQ:
+                    temps[tempres]= temp1 == temp2;
+                    printf("%d,",temps[tempres]); break;
+                case TAC_GE:
+                    temps[tempres]= temp1>= temp2; break;
+                case TAC_LE:
+                    temps[tempres]= temp1<= temp2; break;
+                case TAC_OR:
+                    temps[tempres]= temp1|| temp2; 
+                    printf("%d,",temps[tempres]); break;
+                case TAC_SUB:
+                    temps[tempres]= temp1- temp2; break;
+    }
+}
 

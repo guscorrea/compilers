@@ -7,6 +7,12 @@
 .size	i,	8
 i:
 	.quad	0
+.globl	j
+.align	8
+.type	j,	@object
+.size	j,	8
+j:
+	.quad	1
 
 ## TAC_BEGIN_FUNC ##
 	.globl	main
@@ -15,8 +21,8 @@ main:
 .LFB0:
 	pushq	%rbp
 	movq	%rsp, %rbp
-movl	i(%rip),	%eax
-movl	%eax,	%esi
+## TAC_PRINT ##
+movl	$21,	%esi
 leaq	.LC0(%rip),	%rdi
 movl	$0,	%eax
 call	printf@PLT

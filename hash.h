@@ -22,13 +22,13 @@
 #define SYMBOL_LITBYTE 10
 #define SYMBOL_FUNCTIONPAR 11
 #define SYMBOL_LABEL 12
+#define SYMBOL_TEMP 13
 
 #define DATATYPE_INT 1
 #define DATATYPE_LONG 2
 #define DATATYPE_FLOAT 3
 #define DATATYPE_BOOL 4
 #define DATATYPE_BYTE 5
-
 typedef struct hash_node {
 
     int type;

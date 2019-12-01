@@ -49,6 +49,7 @@ typedef struct tac_node {
     struct tac_node *prev;
     struct tac_node *next;
 } TAC;
+int TempInt(char * temp);
 TAC *TAC_make_push_arg(TAC *arg, AST *func_name, int callId);
 TAC *TAC_make_func_call(AST *func_name, TAC *args, int callId);
 TAC *TAC_make_return(TAC *expression);
