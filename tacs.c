@@ -12,6 +12,8 @@ TAC* makeIfThen(int type, TAC* code0, TAC* code1);
 TAC* makeWhile(TAC *condition, TAC *body);
 TAC* makeFor(HASH_NODE* symbol, TAC* begin, TAC* condition, TAC* increment, TAC* body);
 TAC* makeIfThenElse(TAC *condition, TAC *if_true, TAC *if_false);
+int OpCalculation(TAC* tac);
+void symbolScalarCase(TAC* tac, FILE* fout);
 
 TAC* tacCreate(int type, HASH_NODE *res, HASH_NODE *op1, HASH_NODE *op2) {
     TAC* newtac;
@@ -266,16 +268,15 @@ TAC *TAC_make_push_arg(TAC *arg, AST *func_name, int callId) {
 }
 
 void generateASM(TAC* tac, FILE* fout) {
-    int temp1;
-    int temp2;
-    int tempres;
+    int temp1, temp2, tempres;
     static int funclabel = 0;
+
     if (!tac)return;
     
     if(!(tac->prev)){
         fprintf(fout,".LC0:\n"
-	".string\t\"%%i\"\n"
-	"\t.text\n");
+	                 ".string\t\"%%i\"\n"
+	                 ".text\n");
     }
     if (tac->prev){
         generateASM(tac->prev, fout);
@@ -329,51 +330,35 @@ void generateASM(TAC* tac, FILE* fout) {
         case TAC_PRINT:
         if(tac->res->text[0]=='T'&&tac->res->text[4]==':'){
             fprintf(fout,"## TAC_PRINT ##\n"
-         "movl\t$%d,\t%%esi\n"
-	"leaq\t.LC0(%%rip),\t%%rdi\n"
-	"movl\t$0,\t%%eax\n"
-	"call\tprintf@PLT\n",temps[TempInt(tac->res->text)]); break;
+                         "movl\t$%d,\t%%esi\n"
+	                     "leaq\t.LC0(%%rip),\t%%rdi\n"
+                         "movl\t$0,\t%%eax\n"
+	                     "call\tprintf@PLT\n",temps[TempInt(tac->res->text)]); break;
         }
          switch(tac->res->type){
-
        case SYMBOL_LITINT: 
-         fprintf(fout,"## TAC_PRINT ##\n"
-         "movl\t$%s,\t%%esi\n"
-	"leaq\t.LC0(%%rip),\t%%rdi\n"
-	"movl\t$0,\t%%eax\n"
-	"call\tprintf@PLT\n",tac->res->text); break;
-        case SYMBOL_LITBOOL:{
-            int value = 0;
-                    if(strcmp(tac->res->text, "TRUE") == 0)
-                        value = 1;
-        fprintf(fout, "## TAC_PRINT ##\n"
-                      "movl\t$%d,\t%%esi\n"
-	"leaq\t.LC0(%%rip),\t%%rdi\n"
-	"movl\t$0,\t%%eax\n"
-	"call\tprintf@PLT\n",
-                    value);
+         fprintf(fout,"## TAC_PRINT LIT INT ##\n"
+                      "movl\t$%s,\t%%esi\n"
+	                  "leaq\t.LC0(%%rip),\t%%rdi\n"
+	                  "movl\t$0,\t%%eax\n"
+	                  "call\tprintf@PLT\n",tac->res->text); break;
+        case SYMBOL_LITBOOL: {
+            int boolValue = 0;
+            if (strcmp(tac->res->text, "TRUE") == 0)
+                boolValue = 1;
+            fprintf(fout, "## TAC_PRINT LITBOOL ##\n"
+                          "movl\t$%d,\t%%esi\n"
+                          "leaq\t.LC0(%%rip),\t%%rdi\n"
+                          "movl\t$0,\t%%eax\n"
+                          "call\tprintf@PLT\n",
+                    boolValue);
         }
-                    break;
-
-        case SYMBOL_SCALAR:{
-            HASH_NODE* var = hashFind(tac->res->text);
-            switch (var->datatype) {
-                case DATATYPE_INT:
-                 fprintf(fout,"movl\t%s(%%rip),\t%%eax\n"
-	"movl\t%%eax,\t%%esi\n"
-	"leaq\t.LC0(%%rip),\t%%rdi\n"
-	"movl\t$0,\t%%eax\n"
-	"call\tprintf@PLT\n",tac->res->text);break;
-               case DATATYPE_BOOL:
-               fprintf(fout,"movl\t%s(%%rip),\t%%eax\n"
-	"movl\t%%eax,\t%%esi\n"
-	"leaq\t.LC0(%%rip),\t%%rdi\n"
-	"movl\t$0,\t%%eax\n"
-	"call\tprintf@PLT\n",tac->res->text);break;
-            }
-
-         }break;}
             break;
+        case SYMBOL_SCALAR:
+            symbolScalarCase(tac, fout);
+            break;
+        }
+        break;
         case TAC_LABEL:
             fprintf(fout, "## TAC_LABEL ##\n"
                           ".%s:\n",
@@ -419,11 +404,12 @@ void generateASM(TAC* tac, FILE* fout) {
             switch(hash->datatype){
                 case DATATYPE_INT:
                     fprintf(fout, ".globl\t%s\n"
-	".align\t8\n"
-	".type\t%s,\t@object\n"
-	".size\t%s,\t8\n"
-"%s:\n"
-	"\t.quad\t%s\n", tac->res->text,tac->res->text,tac->res->text,tac->res->text,tac->op1->text);
+	                              ".align\t8\n"
+	                              ".type\t%s,\t@object\n"
+	                              ".size\t%s,\t8\n"
+                                  "%s:\n"
+                                  "\t.quad\t%s\n",
+                            tac->res->text,tac->res->text,tac->res->text,tac->res->text,tac->op1->text);
                 break;
                 case DATATYPE_LONG:
                 break;
@@ -432,15 +418,15 @@ void generateASM(TAC* tac, FILE* fout) {
                     if(strcmp(tac->op1->text, "TRUE") == 0)
                         value = 1;
                 fprintf(fout, ".globl\t%s\n"
-	".align\t8\n"
-	".type\t%s,\t@object\n"
-	".size\t%s,\t8\n"
-"i:\n"
-	"\t.quad\t%d\n", tac->res->text,tac->res->text,tac->res->text,value);
+	                          ".align\t8\n"
+	                          ".type\t%s,\t@object\n"
+	                          ".size\t%s,\t8\n"
+                              "i:\n"
+	                          "\t.quad\t%d\n",
+                        tac->res->text,tac->res->text,tac->res->text,value);
                 }
                 break;
                 case DATATYPE_BYTE:
-
                 break;
                 case DATATYPE_FLOAT:
                 break;
@@ -456,6 +442,28 @@ void generateASM(TAC* tac, FILE* fout) {
                                        "\tcall\tread@PLT\n"
                                        "\tmovl\t$%d, %%eax\n", tac->res->text, 0, 0); //revisar
         default:
+            break;
+    }
+}
+
+void symbolScalarCase(TAC* tac, FILE* fout) {
+    HASH_NODE *var = hashFind(tac->res->text);
+    switch (var->datatype) {
+        case DATATYPE_INT:
+            fprintf(fout, "## TAC_PRINT DATATYPE INT ## ##\n"
+                          "\tmovl\t%s(%%rip),\t%%eax\n"
+                          "\tmovl\t%%eax,\t%%esi\n"
+                          "\tleaq\t.LC0(%%rip),\t%%rdi\n"
+                          "\tmovl\t$0,\t%%eax\n"
+                          "\tcall\tprintf@PLT\n", tac->res->text);
+            break;
+        case DATATYPE_BOOL:
+            fprintf(fout, "## TAC_PRINT DATATYPE BOOL ## ##\n"
+                          "\tmovl\t%s(%%rip),\t%%eax\n"
+                          "\tmovl\t%%eax,\t%%esi\n"
+                          "\tleaq\t.LC0(%%rip),\t%%rdi\n"
+                          "\tmovl\t$0,\t%%eax\n"
+                          "\tcall\tprintf@PLT\n", tac->res->text);
             break;
     }
 }

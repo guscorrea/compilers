@@ -1,17 +1,11 @@
 .LC0:
 .string	"%i"
-	.text
-.globl	i
+.text
+.globl	x
 .align	8
-.type	i,	@object
-.size	i,	8
-i:
-	.quad	0
-.globl	j
-.align	8
-.type	j,	@object
-.size	j,	8
-j:
+.type	x,	@object
+.size	x,	8
+x:
 	.quad	1
 
 ## TAC_BEGIN_FUNC ##
@@ -21,11 +15,15 @@ main:
 .LFB0:
 	pushq	%rbp
 	movq	%rsp, %rbp
-## TAC_PRINT ##
-movl	$21,	%esi
-leaq	.LC0(%rip),	%rdi
-movl	$0,	%eax
-call	printf@PLT
+## TAC_MOVE ##
+	movl	Temp: 0(%rip), %eax
+	movl	%eax, x(%rip)
+## TAC_PRINT DATATYPE INT ## ##
+	movl	x(%rip),	%eax
+	movl	%eax,	%esi
+	leaq	.LC0(%rip),	%rdi
+	movl	$0,	%eax
+	call	printf@PLT
 ## TAC_END_FUNC ##
 	movl	$0, %eax
 	popq	%rbp
