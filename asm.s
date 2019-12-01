@@ -1,12 +1,14 @@
 .LC0:
-.string	"%i"
-.text
-.globl	x
-.align	8
-.type	x,	@object
-.size	x,	8
-x:
+	.string	"%i"
+	.text
+	.globl	x
+	.data
+	.align	8
+	.type	x,	@object
+	.size	x,	8
+	x:
 	.quad	1
+	.section	.rodata
 
 ## TAC_BEGIN_FUNC ##
 	.globl	main
@@ -16,12 +18,12 @@ main:
 	pushq	%rbp
 	movq	%rsp, %rbp
 ## TAC_MOVE ##
-	movl	$4, x(%rip)
+	movl	$3, x(%rip)
 ## TAC_PRINT DATATYPE INT ## ##
-	movl	x(%rip),	%eax
-	movl	%eax,	%esi
-	leaq	.LC0(%rip),	%rdi
-	movl	$0,	%eax
+	movl	x(%rip), %eax
+	movl	%eax, %esi
+	leaq	.LC0(%rip), %rdi
+	movl	$0, %eax
 	call	printf@PLT
 ## TAC_END_FUNC ##
 	movl	$0, %eax

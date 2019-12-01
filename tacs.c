@@ -285,8 +285,8 @@ void generateASM(TAC* tac, FILE* fout) {
     
     if(!(tac->prev)){
         fprintf(fout,".LC0:\n"
-	                 ".string\t\"%%i\"\n"
-	                 ".text\n");
+	                 "\t.string\t\"%%i\"\n"
+	                 "\t.text\n");
     }
     if (tac->prev){
         generateASM(tac->prev, fout);
@@ -412,12 +412,14 @@ void generateASM(TAC* tac, FILE* fout) {
             HASH_NODE* hash = hashFind(tac->res->text);
             switch(hash->datatype){
                 case DATATYPE_INT:
-                    fprintf(fout, ".globl\t%s\n"
-	                              ".align\t8\n"
-	                              ".type\t%s,\t@object\n"
-	                              ".size\t%s,\t8\n"
-                                  "%s:\n"
-                                  "\t.quad\t%s\n",
+                    fprintf(fout, "\t.globl\t%s\n"
+                                  "\t.data\n"
+	                              "\t.align\t8\n"
+	                              "\t.type\t%s,\t@object\n"
+	                              "\t.size\t%s,\t8\n"
+                                  "\t%s:\n"
+                                  "\t.quad\t%s\n"
+                                  "\t.section\t.rodata\n",
                             tac->res->text,tac->res->text,tac->res->text,tac->res->text,tac->op1->text);
                 break;
                 case DATATYPE_LONG:
@@ -426,11 +428,12 @@ void generateASM(TAC* tac, FILE* fout) {
                  int value = 0;
                     if(strcmp(tac->op1->text, "TRUE") == 0)
                         value = 1;
-                fprintf(fout, ".globl\t%s\n"
-	                          ".align\t8\n"
-	                          ".type\t%s,\t@object\n"
-	                          ".size\t%s,\t8\n"
-                              "i:\n"
+                fprintf(fout, "\t.globl\t%s\n"
+                              "\t.data\n"
+	                          "\t.align\t8\n"
+	                          "\t.type\t%s,\t@object\n"
+	                          "\t.size\t%s,\t8\n"
+                              "\ti:\n"
 	                          "\t.quad\t%d\n",
                         tac->res->text,tac->res->text,tac->res->text,value);
                 }
@@ -460,18 +463,18 @@ void symbolScalarCase(TAC* tac, FILE* fout) {
     switch (var->datatype) {
         case DATATYPE_INT:
             fprintf(fout, "## TAC_PRINT DATATYPE INT ## ##\n"
-                          "\tmovl\t%s(%%rip),\t%%eax\n"
-                          "\tmovl\t%%eax,\t%%esi\n"
-                          "\tleaq\t.LC0(%%rip),\t%%rdi\n"
-                          "\tmovl\t$0,\t%%eax\n"
+                          "\tmovl\t%s(%%rip), %%eax\n"
+                          "\tmovl\t%%eax, %%esi\n"
+                          "\tleaq\t.LC0(%%rip), %%rdi\n"
+                          "\tmovl\t$0, %%eax\n"
                           "\tcall\tprintf@PLT\n", tac->res->text);
             break;
         case DATATYPE_BOOL:
             fprintf(fout, "## TAC_PRINT DATATYPE BOOL ## ##\n"
-                          "\tmovl\t%s(%%rip),\t%%eax\n"
-                          "\tmovl\t%%eax,\t%%esi\n"
-                          "\tleaq\t.LC0(%%rip),\t%%rdi\n"
-                          "\tmovl\t$0,\t%%eax\n"
+                          "\tmovl\t%s(%%rip), %%eax\n"
+                          "\tmovl\t%%eax, %%esi\n"
+                          "\tleaq\t.LC0(%%rip), %%rdi\n"
+                          "\tmovl\t$0, %%eax\n"
                           "\tcall\tprintf@PLT\n", tac->res->text);
             break;
     }
