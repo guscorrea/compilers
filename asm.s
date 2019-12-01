@@ -7,7 +7,7 @@
 	.type	x,	@object
 	.size	x,	8
 	x:
-	.quad	10
+	.quad	2
 	.section	.rodata
 
 ## TAC_BEGIN_FUNC ##
@@ -17,10 +17,10 @@ main:
 .LFB0:
 	pushq	%rbp
 	movq	%rsp, %rbp
-## TAC_GE ##
+## TAC_EQ ##
 	movl	x(%rip), %eax
 	cmpl	$2, %eax
-	jle	.Label0
+	jne	.Label0
 ## TAC_MOVE ##
 	movl	$3, x(%rip)
 ## TAC_LABEL ##

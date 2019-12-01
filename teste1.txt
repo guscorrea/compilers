@@ -1,6 +1,6 @@
-int x = 10;
+int x = 2;
 int main(){
-    if( x >= 2) then
+    if( x == 2) then
         x = 3;
 
     print x;
