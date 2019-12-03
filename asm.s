@@ -7,6 +7,14 @@
 	.type	x,	@object
 	.size	x,	8
 	x:
+	.quad	10
+	.section	.rodata
+	.globl	y
+	.data
+	.align	8
+	.type	y,	@object
+	.size	y,	8
+	y:
 	.quad	2
 	.section	.rodata
 
@@ -17,16 +25,10 @@ main:
 .LFB0:
 	pushq	%rbp
 	movq	%rsp, %rbp
-## TAC_EQ ##
-	movl	x(%rip), %eax
-	cmpl	$2, %eax
-	jne	.Label0
 ## TAC_MOVE ##
-	movl	$3, x(%rip)
-## TAC_LABEL ##
-.Label0:
+	movl	$2, y(%rip)
 ## TAC_PRINT DATATYPE INT ## ##
-	movl	x(%rip), %eax
+	movl	y(%rip), %eax
 	movl	%eax, %esi
 	leaq	.LC0(%rip), %rdi
 	movl	$0, %eax

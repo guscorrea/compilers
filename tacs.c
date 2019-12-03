@@ -316,6 +316,7 @@ void generateASM(TAC* tac, FILE* fout) {
             fprintf(fout, "## TAC_LE ##\n");
             printLessOrGreaterOp(tac, fout);
             fprintf(fout,"\tjg\t");
+            break;
         case TAC_IFZ:
             fprintf(fout, ".%s\n", tac->res->text);
             break;
@@ -323,6 +324,7 @@ void generateASM(TAC* tac, FILE* fout) {
             fprintf(fout, "## TAC_EQ ##\n");
             printLessOrGreaterOp(tac, fout);
             fprintf(fout,"\tjne\t");
+            break;
         case TAC_DIV:
         case TAC_SUB:
         case TAC_ADD:
