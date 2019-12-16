@@ -39,6 +39,9 @@
 #define TAC_FOR 30
 #define TAC_BREAK 31
 #define TAC_DEFVAR 32
+
+#define LOGIC_OP "LogicOP"
+
 typedef struct tac_node {
     int type;
     int callId;

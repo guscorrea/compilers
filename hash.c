@@ -79,8 +79,8 @@ HASH_NODE * makeTemp(void) {
     static int serialNumber = 0;
     static char name[100];
 
-    sprintf(name, "Temp: %d", serialNumber++);
-    return hashInsert(name, 0);
+    sprintf(name, "Temp%d", serialNumber++);
+    return hashInsert(name, SYMBOL_TEMP);
 }
 
 HASH_NODE * makeLabel(void) {
@@ -88,5 +88,45 @@ HASH_NODE * makeLabel(void) {
     static char name[100];
 
     sprintf(name, "Label%d", serialNumber++);
-    return hashInsert(name, 0);
+    return hashInsert(name, SYMBOL_LABEL);
+}
+
+void generateASMGlobalVariablesFromLitValues(FILE* fout){
+    static int stringCounter = 0;
+
+    fprintf(fout, "\t.section\t.rodata\n"
+                  "LC0:\t.string \"%%d\"\n"
+                  "LC1:\t.string \"%%f\"\n"
+                  "LC2:\t.string \" %%c\"\n"
+                  "TRUE:\t.string \"TRUE\"\n"
+                  "FALSE:\t.string \"FALSE\"\n"
+                  "_TRUE:\t.long 1\n"
+                  "_FALSE:\t.long 0\n");
+
+    for(int i = 0; i < HASH_SIZE; i++){
+        for(HASH_NODE* node = Table[i]; node; node = node->next){
+            if(node){
+                if(node->type == SYMBOL_LITSTRING){
+                    addMatch(node->text, stringCounter);
+                    fprintf(fout, "\t.section\t.rodata\n"
+                                  "%s%d:\t.string\t%s\n", LITSTR_VAR_NAME, stringCounter, node->text);
+                    stringCounter++;
+                }
+                else if(node->type == SYMBOL_LITINT){
+                    fprintf(fout, "\t.section\t.rodata\n"
+                                  "_%s:\t.long\t%s\n", node->text, node->text);
+                }
+                else if(node->type == SYMBOL_LITCHAR){
+                    addMatch(node->text, stringCounter);
+                    fprintf(fout, "\t.section\t.rodata\n"
+                                  "%s%d:\t.long\t%d\n", LITCHAR_VAR_NAME, stringCounter, (int)(node->text[1]));
+                    stringCounter++;
+                }
+                else if(node->type == SYMBOL_TEMP){
+                    fprintf(fout, "\t.data\n"
+                                  "_%s:\t.long\t 0\n", node->text);
+                }
+            }
+        }
+    }
 }

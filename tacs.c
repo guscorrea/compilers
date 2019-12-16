@@ -5,6 +5,11 @@
 #include "tacs.h"
 #include <string.h>
 
+typedef struct operands{
+    char* op1;
+    char* op2;
+} OPERANDS;
+
 int temps[10000]={0};
 static int call_count = 0;
 TAC* makeBinOp(int type, TAC* code0, TAC* code1);
@@ -17,6 +22,9 @@ int calculateTemps(HASH_NODE* op);
 void symbolScalarCase(TAC* tac, FILE* fout);
 int TempInt(char * temp);
 void printLessOrGreaterOp(TAC* tac, FILE* fout);
+OPERANDS fillOperands(HASH_NODE* op1, HASH_NODE* op2);
+void loadVarsIntoCorrectRegisters(FILE* fout, HASH_NODE* op1, HASH_NODE* op2, OPERANDS op);
+
 
 int TempInt(char * temp){
     char  token[sizeof(temp)];
@@ -281,279 +289,337 @@ TAC *TAC_make_push_arg(TAC *arg, AST *func_name, int callId) {
 void generateASM(TAC* tac, FILE* fout) {
     int temp1, temp2, tempres;
     static int funclabel = 0;
+    static int logicOpCount = 0;
 
     if (!tac)return;
-    
-    if(!(tac->prev)){
-        fprintf(fout,".LC0:\n"
-	                 "\t.string\t\"%%i\"\n"
-	                 "\t.text\n");
-    }
+
     if (tac->prev){
         generateASM(tac->prev, fout);
     }
 
     switch (tac->type) {
-        case TAC_MOVE:
-            if(tac->op1->type == SYMBOL_LITINT) {
-                fprintf(fout, "## TAC_MOVE ##\n"
-                              "\tmovl\t$%s, %s(%%rip)\n",
-                        tac->op1->text,
-                        tac->res->text);
-            } else {
-                fprintf(fout, "## TAC_MOVE ##\n"
-                              "\tmovl\t$%d, %s(%%rip)\n",
-                        temps[0],
-                        tac->res->text);
+        case TAC_DEFVAR: {
+            HASH_NODE *var = hashFind(tac->res->text);
+            switch (var->datatype) {
+                case DATATYPE_INT:
+                case DATATYPE_LONG:
+                    fprintf(fout, "\n\t.data\n"
+                                  "_%s:\t.long\t%s\n"
+                                  "\t.section\t.rodata\n", tac->res->text, tac->op1->text);
+                    break;
+                case DATATYPE_BYTE:
+                    fprintf(fout, "\n\t.data\n"
+                                  "%s:\t.long\t%d\n"
+                                  "\t.section\t.rodata\n", tac->res->text, (int) (tac->op1->text[1]));
+                    break;
+                case DATATYPE_BOOL: {
+                    int value = 0;
+                    if (strcmp(tac->op1->text, "TRUE") == 0)
+                        value = 1;
+                    fprintf(fout, "\n\t.data\n"
+                                  "_%s:\t.long\t%d\n"
+                                  "\t.section\t.rodata\n", tac->res->text, value);
+                }
+                    break;
+                default:
+                    break;
             }
-            break;
-        case TAC_GE:
-            fprintf(fout, "## TAC_GE ##\n");
-            printLessOrGreaterOp(tac, fout);
-            fprintf(fout,"\tjle\t");
-            break;
-        case TAC_LE:
-            fprintf(fout, "## TAC_LE ##\n");
-            printLessOrGreaterOp(tac, fout);
-            fprintf(fout,"\tjg\t");
-            break;
-        case TAC_IFZ:
-            fprintf(fout, ".%s\n", tac->res->text);
-            break;
-        case TAC_EQ:
-            fprintf(fout, "## TAC_EQ ##\n");
-            printLessOrGreaterOp(tac, fout);
-            fprintf(fout,"\tjne\t");
-            break;
-        case TAC_DIV:
-        case TAC_SUB:
-        case TAC_ADD:
-        case TAC_MUL:
-        case TAC_DIF:
-        case TAC_AND:
-        case TAC_OR:
-            OpCalculation(tac);
-            break;
-        case TAC_NOT:
-            tempres = TempInt(tac->res->text);
-            if(tac->op1->text[0]=='T' && tac->op1->text[4]==':' ){
-                temp1 = temps[TempInt(tac->op1->text)];
-            }
-            else{
-            if(!strcmp(tac->op1->text,"TRUE")){
-                temp1=1;
-            }
-            else if(!strcmp(tac->op1->text,"FALSE")){
-                 temp1=0;
-            }
-            else{
-            temp1 = atoi(tac->op1->text);
-            }
-            temps[tempres]= !temp1;
         }
-        break;
+            break;
+        case TAC_BEGIN_FUNC:
+            fprintf(fout, "\n## TAC_BEGINFUN ##\n"
+                          "\t.globl\t%s\n"
+                          "\t.type\t%s, @function\n"
+                          "%s:\n"
+                          ".LFB%d:\n"
+                          "\tpushq\t%%rbp\n"
+                          "\tmovq\t%%rsp, %%rbp\n", tac->res->text, tac->res->text, tac->res->text, funclabel);
+            break;
+        case TAC_END_FUNC:
+            fprintf(fout, "## TAC_ENDFUN\n"
+                          "\tpopq\t%%rbp\n"
+                          "\tret\n"
+                          ".LFE%d:\n"
+                          "\t.size\t%s, .-%s\n", funclabel, tac->res->text, tac->res->text);
+            funclabel++;
+            break;
         case TAC_PRINT:
-        if(tac->res->text[0]=='T'&&tac->res->text[4]==':'){
-            fprintf(fout,"## TAC_PRINT ##\n"
-                         "movl\t$%d,\t%%esi\n"
-	                     "leaq\t.LC0(%%rip),\t%%rdi\n"
-                         "movl\t$0,\t%%eax\n"
-	                     "call\tprintf@PLT\n",temps[TempInt(tac->res->text)]); break;
-        }
-         switch(tac->res->type){
-       case SYMBOL_LITINT: 
-         fprintf(fout,"## TAC_PRINT LIT INT ##\n"
-                      "movl\t$%s,\t%%esi\n"
-	                  "leaq\t.LC0(%%rip),\t%%rdi\n"
-	                  "movl\t$0,\t%%eax\n"
-	                  "call\tprintf@PLT\n",tac->res->text); break;
-        case SYMBOL_LITBOOL: {
-            int boolValue = 0;
-            if (strcmp(tac->res->text, "TRUE") == 0)
-                boolValue = 1;
-            fprintf(fout, "## TAC_PRINT LITBOOL ##\n"
-                          "movl\t$%d,\t%%esi\n"
-                          "leaq\t.LC0(%%rip),\t%%rdi\n"
-                          "movl\t$0,\t%%eax\n"
-                          "call\tprintf@PLT\n",
-                    boolValue);
+            switch (tac->res->type) {
+                case SYMBOL_LITSTRING: {
+                    int counter = findCounter(tac->res->text);
+                    fprintf(fout, "## TAC_PRINT_LITSTRING ##\n"
+                                  "\tleaq\t%s%d(%%rip), %%rdi\n"
+                                  "\tcall\tprintf@PLT\n", LITSTR_VAR_NAME, counter);
+                    break;
+                }
+                case SYMBOL_LITCHAR:{
+                    int counter = findCounter(tac->res->text);
+                    fprintf(fout, "## TAC_PRINT_LITCHAR ##\n"
+                                  "\tmovzbl\t%s%d(%%rip), %%eax\n"
+                                  "\tmovsbl\t%%al, %%eax\n"
+                                  "\tmovl\t%%eax, %%edi\n"
+                                  "\tcall\tputchar@PLT\n", LITCHAR_VAR_NAME, counter);
+                    break;
+                }
+                case SYMBOL_LITINT: fprintf(fout, "## TAC_PRINT_LITINT ##\n"
+                                                  "\tmovl\t_%s(%%rip), %%esi\n"
+                                                  "\tleaq\tLC0(%%rip), %%rdi\n"
+                                                  "\tcall\tprintf@PLT\n", tac->res->text);
+                    break;
+                case SYMBOL_LITBOOL: fprintf(fout, "## TAC_PRINT_LITBOOL ##\n"
+                                                   "\tleaq\t%s(%%rip), %%rdi\n"
+                                                   "\tcall\tprintf@PLT\n", tac->res->text);
+                    break;
+                case SYMBOL_TEMP:
+                case SYMBOL_SCALAR:{
+                    HASH_NODE* var = hashFind(tac->res->text);
+                    switch (var->datatype) {
+                        case DATATYPE_INT:
+                        case DATATYPE_LONG:
+                            fprintf(fout, "## TAC_PRINT_VAR ##\n"
+                                          "\tmovl\t_%s(%%rip), %%eax\n"
+                                          "\tmovl\t%%eax, %%esi\n"
+                                          "\tleaq\tLC0(%%rip), %%rdi\n"
+                                          "\tmovl\t$0, %%eax\n"
+                                          "\tcall\tprintf@PLT\n", tac->res->text);
+                            break;
+                        case DATATYPE_BOOL:
+                            fprintf(fout, "## TAC_PRINT_VAR_BOOL\n"
+                                          "\tmovl\t_%s(%%rip), %%eax\n"
+                                          "\ttestl\t%%eax, %%eax\n"
+                                          "\tje\t.%s%d\n"
+                                          "\tleaq\tTRUE(%%rip), %%rdi\n"
+                                          "\tcall\tprintf@PLT\n"
+                                          "\tjmp\t.%s%d\n"
+                                          ".%s%d:\n"
+                                          "\tleaq\tFALSE(%%rip), %%rdi\n"
+                                          "\tcall\tprintf@PLT\n"
+                                          ".%s%d:\n", tac->res->text,
+                                    LOGIC_OP, logicOpCount,
+                                    LOGIC_OP, logicOpCount+1,
+                                    LOGIC_OP, logicOpCount,
+                                    LOGIC_OP, logicOpCount+1);
+                            logicOpCount += 2;
+                            break;
+                    }
+                }
+                    break;
+            }
+            break;
+        case TAC_MOVE:{
+            fprintf(fout, "## TAC_MOVE ##\n");
+            if(tac->op1->type == SYMBOL_LITCHAR){
+                int counter = findCounter(tac->op1->text);
+                    fprintf(fout, "\tmovl\t_%s%d(%%rip), %%eax\n"
+                                  "\tmovl\t%%eax, _%s(%%rip)\n", LITCHAR_VAR_NAME, counter, tac->res->text);
+            }
+            else if(tac->op1->type == SYMBOL_SCALAR && tac->op1->datatype == DATATYPE_BYTE){
+                    fprintf(fout, "\tmovl\t_%s(%%rip), %%eax\n"
+                                  "\tmovl\t%%eax, _%s(%%rip)\n", tac->op1->text, tac->res->text);
+            }
+            else {
+                        fprintf(fout, "\tmovl\t_%s(%%rip), %%eax\n"
+                                      "\tmovl\t%%eax, _%s(%%rip)\n", tac->op1->text, tac->res->text);
+                    }
         }
             break;
-        case SYMBOL_SCALAR:
-            symbolScalarCase(tac, fout);
+        case TAC_ADD:{
+            OPERANDS op = fillOperands(tac->op1, tac->op2);
+            fprintf(fout, "## TAC_ADD ##\n"
+                          "\tmovl\t_%s(%%rip), %%edx\n"
+                          "\tmovl\t_%s(%%rip), %%eax\n"
+                          "\taddl\t%%edx, %%eax\n"
+                          "\tmovl\t%%eax, _%s(%%rip)\n", op.op1, op.op2, tac->res->text);
+        }
             break;
+        case TAC_SUB:{
+            OPERANDS op = fillOperands(tac->op1, tac->op2);
+            fprintf(fout, "## TAC_SUB\n"
+                          "\tmovl\t_%s(%%rip), %%edx\n"
+                          "\tmovl\t_%s(%%rip), %%eax\n"
+                          "\tsubl\t%%eax, %%edx\n"
+                          "\tmovl\t%%edx, _%s(%%rip)\n", op.op1, op.op2, tac->res->text);
         }
         break;
-        case TAC_LABEL:
-            fprintf(fout, "## TAC_LABEL ##\n"
-                          ".%s:\n",
-                    tac->res->text);
+        case TAC_MUL:{
+            OPERANDS op = fillOperands(tac->op1, tac->op2);
+            fprintf(fout, "## TAC_MUL\n"
+                          "\tmovl\t_%s(%%rip), %%edx\n"
+                          "\tmovl\t_%s(%%rip), %%eax\n"
+                          "\timull\t%%edx, %%eax\n"
+                          "\tmovl\t%%eax, _%s(%%rip)\n", op.op1, op.op2, tac->res->text);
+        }
+        break;
+        case TAC_DIV:{
+            OPERANDS op = fillOperands(tac->op1, tac->op2);
+            fprintf(fout, "## TAC_DIV\n"
+                          "\tmovl\t_%s(%%rip), %%eax\n"
+                          "\tmovl\t_%s(%%rip), %%ecx\n"
+                          "\tcltd\n"
+                          "\tidivl\t%%ecx\n"
+                          "\tmovl\t%%eax, _%s(%%rip)\n", op.op1, op.op2, tac->res->text);
+        }
+        break;
+        case TAC_IFZ: fprintf(fout, "## TAC_IFZ\n"
+                                    "\tmovl\t_%s(%%rip), %%eax\n"
+                                    "\ttestl\t%%eax, %%eax\n"
+                                    "\tje\t.%s\n", tac->op1->text, tac->res->text);
             break;
-        case TAC_JUMP:
-            fprintf(fout, "## TAC_JUMP ##\n"
-                          "\tjmp\t.%s\n",
-                    tac->res->text);
+        case TAC_LABEL: fprintf(fout, "## TAC_LABEL\n"
+                                      ".%s:\n", tac->res->text);
             break;
-        case TAC_RET:
-            fprintf(fout, "## TAC_RETURN ##\n"
-                          "\tmovl\t%s(%%rip), %%eax\n", tac->res->text);
+        case TAC_JUMP: fprintf(fout, "## TAC_JUMP\n"
+                                     "\tjmp\t.%s\n", tac->res->text);
             break;
-        case TAC_BREAK:
-            if (tac->res != 0) {
+        case TAC_EQ:{
+            OPERANDS op = fillOperands(tac->op1, tac->op2);
+            fprintf(fout, "## TAC_EQ ##\n"
+                          "\tmovl\t_%s(%%rip), %%edx\n"
+                          "\tmovl\t_%s(%%rip), %%eax\n"
+                          "\tcmpl\t%%eax, %%edx\n"
+                          "\tsete\t%%al\n"
+                          "\tmovzbl\t%%al, %%eax\n"
+                          "\tmovl\t%%eax, _%s(%%rip)\n", op.op1, op.op2, tac->res->text);
+        }
+            break;
+        case TAC_DIF:{
+            OPERANDS op = fillOperands(tac->op1, tac->op2);
+            fprintf(fout, "## TAC_DIF ##\n"
+                          "\tmovl\t_%s(%%rip), %%edx\n"
+                          "\tmovl\t_%s(%%rip), %%eax\n"
+                          "\tcmpl\t%%eax, %%edx\n"
+                          "\tsetne\t%%al\n"
+                          "\tmovzbl\t%%al, %%eax\n"
+                          "\tmovl\t%%eax, _%s(%%rip)\n", op.op1, op.op2, tac->res->text);
+        }
+            break;
+        case TAC_LE:{
+            OPERANDS op = fillOperands(tac->op1, tac->op2);
+            fprintf(fout, "## TAC_LE\n"
+                          "\tmovl\t_%s(%%rip), %%edx\n"
+                          "\tmovl\t_%s(%%rip), %%eax\n"
+                          "\tcmpl\t%%eax, %%edx\n"
+                          "\tsetle\t%%al\n"
+                          "\tmovzbl\t%%al, %%eax\n"
+                          "\tmovl\t%%eax, _%s(%%rip)\n", op.op1, op.op2, tac->res->text);
+        }
+            break;
+        case TAC_GE:{
+            OPERANDS op = fillOperands(tac->op1, tac->op2);
+            fprintf(fout, "## TAC_GE\n"
+                          "\tmovl\t_%s(%%rip), %%edx\n"
+                          "\tmovl\t_%s(%%rip), %%eax\n"
+                          "\tcmpl\t%%eax, %%edx\n"
+                          "\tsetge\t%%al\n"
+                          "\tmovzbl\t%%al, %%eax\n"
+                          "\tmovl\t%%eax, _%s(%%rip)\n", op.op1, op.op2, tac->res->text);
+        }
+            break;
+        case TAC_AND: fprintf(fout, "## TAC_AND\n"
+                                    "\tmovl\t_%s(%%rip), %%eax\n"
+                                    "\ttestl\t%%eax, %%eax\n"
+                                    "\tje\t.%s%d\n"
+                                    "\tmovl\t_%s(%%rip), %%eax\n"
+                                    "\ttestl\t%%eax, %%eax\n"
+                                    "\tje\t.%s%d\n"
+                                    "\tmovl\t$1, %%eax\n"
+                                    "\tjmp\t.%s%d\n"
+                                    ".%s%d:\n"
+                                    "\tmovl\t$0, %%eax\n"
+                                    ".%s%d:\n"
+                                    "\tmovl\t%%eax, _%s(%%rip)\n", tac->op1->text,
+                              LOGIC_OP, logicOpCount,
+                              tac->op2->text,
+                              LOGIC_OP, logicOpCount,
+                              LOGIC_OP, logicOpCount+1,
+                              LOGIC_OP, logicOpCount,
+                              LOGIC_OP, logicOpCount+1,
+                              tac->res->text);
+            logicOpCount += 2;
+            break;
+        case TAC_OR: fprintf(fout, "## TAC_OR ##\n"
+                                   "\tmovl\t_%s(%%rip), %%eax\n"
+                                   "\ttestl\t%%eax, %%eax\n"
+                                   "\tjne\t.%s%d\n"
+                                   "\tmovl\t_%s(%%rip), %%eax\n"
+                                   "\ttestl\t%%eax, %%eax\n"
+                                   "\tje\t.%s%d\n"
+                                   ".%s%d:\n"
+                                   "\tmovl\t$1, %%eax\n"
+                                   "\tjmp\t.%s%d\n"
+                                   ".%s%d:\n"
+                                   "\tmovl\t$0, %%eax\n"
+                                   ".%s%d:\n"
+                                   "\tmovl\t%%eax, _%s(%%rip)\n", tac->op1->text,
+                             LOGIC_OP, logicOpCount,
+                             tac->op2->text,
+                             LOGIC_OP, logicOpCount+1,
+                             LOGIC_OP, logicOpCount,
+                             LOGIC_OP, logicOpCount+2,
+                             LOGIC_OP, logicOpCount+1,
+                             LOGIC_OP, logicOpCount+2,
+                             tac->res->text);
+            logicOpCount += 3;
+            break;
+        case TAC_NOT: fprintf(fout, "## TAC_NOT ##\n"
+                                    "\tmovl\t_%s(%%rip), %%eax\n"
+                                    "\ttestl\t%%eax, %%eax\n"
+                                    "\tsete\t%%al\n"
+                                    "\tmovzbl\t%%al, %%eax\n"
+                                    "\tmovl\t%%eax, _%s(%%rip)\n", tac->op1->text, tac->res->text);
+            break;
+        case TAC_CALL: fprintf(fout, "## TAC_CALL ##\n"
+                                        "\tmovl\t$0, %%eax\n"
+                                        "\tcall\t%s\n"
+                                        "\tmovl\t%%eax, _%s(%%rip)\n", tac->op1->text, tac->res->text);
+            break;
+        case TAC_RET: fprintf(fout, "## TAC_RETURN ##\n"
+                                       "\tmovl\t_%s(%%rip), %%eax\n", tac->res->text);
+            break;
+        case TAC_BREAK: if(tac->res != 0){
                 fprintf(fout, "## TAC_BREAK ##\n"
                               "\tjmp\t.%s\n", tac->res->text);
             }
             break;
-        case TAC_BEGIN_FUNC: fprintf(fout, "\n## TAC_BEGIN_FUNC ##\n"
-                                         "\t.globl\t%s\n"
-                                         "\t.type\t%s, @function\n"
-                                         "%s:\n"
-                                         ".LFB%d:\n"
-                                         "\tpushq\t%%rbp\n"
-                                         "\tmovq\t%%rsp, %%rbp\n", tac->res->text,
-                                     tac->res->text,
-                                     tac->res->text,
-                                     funclabel);
-            break;
-        case TAC_END_FUNC: fprintf(fout, "## TAC_END_FUNC ##\n"
-                                         "\tmovl\t$%d, %%eax\n"
-                                       "\tpopq\t%%rbp\n"
-                                       "\tret\n"
-                                       ".LFE%d:\n"
-                                       "\t.size\t%s, .-%s\n", 0, funclabel, tac->res->text,
-                                   tac->res->text);
-        funclabel++;
-            break;
-        case TAC_DEFVAR:{
-            HASH_NODE* hash = hashFind(tac->res->text);
-            switch(hash->datatype){
-                case DATATYPE_INT:
-                    fprintf(fout, "\t.globl\t%s\n"
-                                  "\t.data\n"
-	                              "\t.align\t8\n"
-	                              "\t.type\t%s,\t@object\n"
-	                              "\t.size\t%s,\t8\n"
-                                  "\t%s:\n"
-                                  "\t.quad\t%s\n"
-                                  "\t.section\t.rodata\n",
-                            tac->res->text,tac->res->text,tac->res->text,tac->res->text,tac->op1->text);
-                break;
-                case DATATYPE_LONG:
-                break;
-                case DATATYPE_BOOL:{
-                 int value = 0;
-                    if(strcmp(tac->op1->text, "TRUE") == 0)
-                        value = 1;
-                fprintf(fout, "\t.globl\t%s\n"
-                              "\t.data\n"
-	                          "\t.align\t8\n"
-	                          "\t.type\t%s,\t@object\n"
-	                          "\t.size\t%s,\t8\n"
-                              "\ti:\n"
-	                          "\t.quad\t%d\n",
-                        tac->res->text,tac->res->text,tac->res->text,value);
-                }
-                break;
-                case DATATYPE_BYTE:
-                break;
-                case DATATYPE_FLOAT:
-                break;
-                default:
-                break;
-            }
-        }
-        break;
         case TAC_READ: fprintf(fout, "## TAC_READ ##\n"
-                                       "\tmovl\t%s(%%rip), %%eax\n"
-                                       "\tmovl\t%%eax, %%edi\n"
-                                       "\tmovl\t$%d, %%eax\n"
-                                       "\tcall\tread@PLT\n"
-                                       "\tmovl\t$%d, %%eax\n", tac->res->text, 0, 0); //revisar
-        default:
+                                     "\tleaq\t_%s(%%rip), %%rsi\n"
+                                     "\tleaq\tLC0(%%rip), %%rdi\n"
+                                     "\tmovl\t$0, %%eax\n"
+                                     "\tcall\t__isoc99_scanf@PLT\n", tac->res->text);
             break;
-    }
-}
-
-void symbolScalarCase(TAC* tac, FILE* fout) {
-    HASH_NODE *var = hashFind(tac->res->text);
-    switch (var->datatype) {
-        case DATATYPE_INT:
-            fprintf(fout, "## TAC_PRINT DATATYPE INT ## ##\n"
-                          "\tmovl\t%s(%%rip), %%eax\n"
-                          "\tmovl\t%%eax, %%esi\n"
-                          "\tleaq\t.LC0(%%rip), %%rdi\n"
-                          "\tmovl\t$0, %%eax\n"
-                          "\tcall\tprintf@PLT\n", tac->res->text);
-            break;
-        case DATATYPE_BOOL:
-            fprintf(fout, "## TAC_PRINT DATATYPE BOOL ## ##\n"
-                          "\tmovl\t%s(%%rip), %%eax\n"
-                          "\tmovl\t%%eax, %%esi\n"
-                          "\tleaq\t.LC0(%%rip), %%rdi\n"
-                          "\tmovl\t$0, %%eax\n"
-                          "\tcall\tprintf@PLT\n", tac->res->text);
-            break;
-    }
-}
-
-int calculateTemps(HASH_NODE* op) {
-    int temp;
-    temp = atoi(op->text);
-
-    if(op->text[0]=='T' && op->text[4]==':' )
-        temp = temps[TempInt(op->text)];
-
-    if(!strcmp(op->text,"TRUE"))
-        temp =1;
-
-    if(!strcmp(op->text,"FALSE"))
-        temp = 0;
-
-    return temp;
-}
-
-int OpCalculation(TAC* tac){
-    int temp1, temp2, tempres;
-    tempres = TempInt(tac->res->text);
-    temp1 = calculateTemps(tac->op1);
-    temp2 = calculateTemps(tac->op2);
-    switch(tac->type){
-                case TAC_ADD:
-                    temps[tempres]= temp1+ temp2; break;
-                case TAC_DIF:
-                    temps[tempres]= temp1!= temp2; break;
-                case TAC_DIV:
-                    temps[tempres]= temp1/ temp2; break;
-                case TAC_MUL:
-                    temps[tempres]= temp1* temp2; break;
-                case TAC_AND:
-                    temps[tempres]= temp1&& temp2;
-                    printf("%d,",temps[tempres]); break;
-                case TAC_EQ:
-                    temps[tempres]= temp1 == temp2;
-                    printf("%d,",temps[tempres]); break;
-                case TAC_GE:
-                    temps[tempres]= temp1>= temp2; break;
-                case TAC_LE:
-                    temps[tempres]= temp1<= temp2; break;
-                case TAC_OR:
-                    temps[tempres]= temp1|| temp2; 
-                    printf("%d,",temps[tempres]); break;
-                case TAC_SUB:
-                    temps[tempres]= temp1- temp2; break;
-    }
-}
-
-void printLessOrGreaterOp(TAC* tac, FILE* fout) {
-    if (tac->op1->type != SYMBOL_LITINT) {
-        fprintf(fout, "\tmovl\t%s(%%rip), %%eax\n", tac->op1->text);
-    } else {
-        fprintf(fout, "\tmovl\t$%s(%%rip), %%eax\n", tac->op1->text);
+                default:
+                    break;
+            }
     }
 
-    if (tac->op2->type != SYMBOL_LITINT) {
-        fprintf(fout, "\tcmpl\t%s, %%eax\n", tac->op2->text);
-    } else {
-        fprintf(fout, "\tcmpl\t$%s, %%eax\n", tac->op2->text);
-    }
+
+char* findLitValueFullVarName(char* text, const char* varName){
+    int counter = findCounter(text);
+    char* varFullName = (char*)malloc(sizeof(varName) + sizeof(counter));
+    strcpy(varFullName, varName);
+
+    char num[10];
+    sprintf(num, "%d", counter);
+    strcat(varFullName, num);
+
+    return varFullName;
 }
+
+OPERANDS fillOperands(HASH_NODE* op1, HASH_NODE* op2){
+    OPERANDS op;
+    if(op1->type == SYMBOL_LITCHAR)
+        op.op1 = findLitValueFullVarName(op1->text, LITCHAR_VAR_NAME);
+    else
+        op.op1 = op1->text;
+
+    if(op2->type == SYMBOL_LITCHAR)
+        op.op2 = findLitValueFullVarName(op2->text, LITCHAR_VAR_NAME);
+    else
+        op.op2 = op2->text;
+
+    return op;
+}
+
+
+
+

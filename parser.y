@@ -96,6 +96,7 @@ main: programa {astreePrint($1,0,outputFile);
     tac = generateCode($1, 0);
      tacPrintBackwards(tac);
      FILE* fout = fopen("asm.s", "w");
+     generateASMGlobalVariablesFromLitValues(fout);
       generateASM(tac, fout);
        fclose(fout); }
 ;
