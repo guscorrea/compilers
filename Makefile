@@ -1,5 +1,5 @@
-etapa6: y.tab.o lex.yy.o main.o hash.o astree.o semantic.o tacs.o litstr_to_var.o
-	gcc -o etapa6 y.tab.o lex.yy.o main.o hash.o astree.o semantic.o tacs.o litstr_to_var.o
+etapa6: y.tab.o lex.yy.o main.o hash.o astree.o semantic.o tacs.o assembly_utils.o
+	gcc -o etapa6 y.tab.o lex.yy.o main.o hash.o astree.o semantic.o tacs.o assembly_utils.o
 y.tab.o: y.tab.c
 	gcc -c y.tab.c
 lex.yy.o: lex.yy.c y.tab.c
@@ -14,8 +14,8 @@ semantic.o: semantic.c
 	gcc -c semantic.c
 tacs.o: tacs.c
 	gcc -c tacs.c
-litstr_to_var.o: litstr_to_var.c
-	gcc -c litstr_to_var.c
+assembly_utils.o: assembly_utils.c
+	gcc -c assembly_utils.c
 lex.yy.c: scanner.l
 	lex --header-file=lex.yy.h scanner.l
 y.tab.c: parser.y lex.yy.c

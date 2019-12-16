@@ -7,7 +7,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "litstr_to_var.h"
+#include "assembly_utils.h"
 
 #define HASH_SIZE 997
 
@@ -52,6 +52,6 @@ int hashCheckUndeclared(void);
 HASH_NODE * makeTemp(void);
 HASH_NODE * makeLabel(void);
 
-void generateASMGlobalVariablesFromLitValues(FILE* fout);
+void generateGlobals(FILE* fout);
 
 #endif //ETAPA1_HASH_H

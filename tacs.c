@@ -3,7 +3,9 @@
 //
 
 #include "tacs.h"
+#include "assembly_utils.h"
 #include <string.h>
+
 
 typedef struct operands{
     char* op1;
@@ -22,8 +24,10 @@ int calculateTemps(HASH_NODE* op);
 void symbolScalarCase(TAC* tac, FILE* fout);
 int TempInt(char * temp);
 void printLessOrGreaterOp(TAC* tac, FILE* fout);
-OPERANDS fillOperands(HASH_NODE* op1, HASH_NODE* op2);
-void loadVarsIntoCorrectRegisters(FILE* fout, HASH_NODE* op1, HASH_NODE* op2, OPERANDS op);
+OPERANDS getOperands(HASH_NODE* op1, HASH_NODE* op2);
+char* findLitValueFullVarName(char* text, const char* varName);
+char* selectText(int type, HASH_NODE* op);
+
 
 
 int TempInt(char * temp){
@@ -346,19 +350,19 @@ void generateASM(TAC* tac, FILE* fout) {
         case TAC_PRINT:
             switch (tac->res->type) {
                 case SYMBOL_LITSTRING: {
-                    int counter = findCounter(tac->res->text);
+                    int counter = findTempCounter(tac->res->text);
                     fprintf(fout, "## TAC_PRINT_LITSTRING ##\n"
                                   "\tleaq\t%s%d(%%rip), %%rdi\n"
-                                  "\tcall\tprintf@PLT\n", LITSTR_VAR_NAME, counter);
+                                  "\tcall\tprintf@PLT\n", STRING_TEMP, counter);
                     break;
                 }
                 case SYMBOL_LITCHAR:{
-                    int counter = findCounter(tac->res->text);
+                    int counter = findTempCounter(tac->res->text);
                     fprintf(fout, "## TAC_PRINT_LITCHAR ##\n"
                                   "\tmovzbl\t%s%d(%%rip), %%eax\n"
                                   "\tmovsbl\t%%al, %%eax\n"
                                   "\tmovl\t%%eax, %%edi\n"
-                                  "\tcall\tputchar@PLT\n", LITCHAR_VAR_NAME, counter);
+                                  "\tcall\tputchar@PLT\n", CHAR_TEMP, counter);
                     break;
                 }
                 case SYMBOL_LITINT: fprintf(fout, "## TAC_PRINT_LITINT ##\n"
@@ -394,11 +398,7 @@ void generateASM(TAC* tac, FILE* fout) {
                                           ".%s%d:\n"
                                           "\tleaq\tFALSE(%%rip), %%rdi\n"
                                           "\tcall\tprintf@PLT\n"
-                                          ".%s%d:\n", tac->res->text,
-                                    LOGIC_OP, logicOpCount,
-                                    LOGIC_OP, logicOpCount+1,
-                                    LOGIC_OP, logicOpCount,
-                                    LOGIC_OP, logicOpCount+1);
+                                          ".%s%d:\n", tac->res->text, LOGIC_LABEL, logicOpCount, LOGIC_LABEL, logicOpCount+1, LOGIC_LABEL, logicOpCount, LOGIC_LABEL, logicOpCount+1);
                             logicOpCount += 2;
                             break;
                     }
@@ -409,9 +409,9 @@ void generateASM(TAC* tac, FILE* fout) {
         case TAC_MOVE:{
             fprintf(fout, "## TAC_MOVE ##\n");
             if(tac->op1->type == SYMBOL_LITCHAR){
-                int counter = findCounter(tac->op1->text);
+                int counter = findTempCounter(tac->op1->text);
                     fprintf(fout, "\tmovl\t_%s%d(%%rip), %%eax\n"
-                                  "\tmovl\t%%eax, _%s(%%rip)\n", LITCHAR_VAR_NAME, counter, tac->res->text);
+                                  "\tmovl\t%%eax, _%s(%%rip)\n", CHAR_TEMP, counter, tac->res->text);
             }
             else if(tac->op1->type == SYMBOL_SCALAR && tac->op1->datatype == DATATYPE_BYTE){
                     fprintf(fout, "\tmovl\t_%s(%%rip), %%eax\n"
@@ -424,7 +424,7 @@ void generateASM(TAC* tac, FILE* fout) {
         }
             break;
         case TAC_ADD:{
-            OPERANDS op = fillOperands(tac->op1, tac->op2);
+            OPERANDS op = getOperands(tac->op1, tac->op2);
             fprintf(fout, "## TAC_ADD ##\n"
                           "\tmovl\t_%s(%%rip), %%edx\n"
                           "\tmovl\t_%s(%%rip), %%eax\n"
@@ -433,7 +433,7 @@ void generateASM(TAC* tac, FILE* fout) {
         }
             break;
         case TAC_SUB:{
-            OPERANDS op = fillOperands(tac->op1, tac->op2);
+            OPERANDS op = getOperands(tac->op1, tac->op2);
             fprintf(fout, "## TAC_SUB\n"
                           "\tmovl\t_%s(%%rip), %%edx\n"
                           "\tmovl\t_%s(%%rip), %%eax\n"
@@ -442,7 +442,7 @@ void generateASM(TAC* tac, FILE* fout) {
         }
         break;
         case TAC_MUL:{
-            OPERANDS op = fillOperands(tac->op1, tac->op2);
+            OPERANDS op = getOperands(tac->op1, tac->op2);
             fprintf(fout, "## TAC_MUL\n"
                           "\tmovl\t_%s(%%rip), %%edx\n"
                           "\tmovl\t_%s(%%rip), %%eax\n"
@@ -451,7 +451,7 @@ void generateASM(TAC* tac, FILE* fout) {
         }
         break;
         case TAC_DIV:{
-            OPERANDS op = fillOperands(tac->op1, tac->op2);
+            OPERANDS op = getOperands(tac->op1, tac->op2);
             fprintf(fout, "## TAC_DIV\n"
                           "\tmovl\t_%s(%%rip), %%eax\n"
                           "\tmovl\t_%s(%%rip), %%ecx\n"
@@ -460,30 +460,8 @@ void generateASM(TAC* tac, FILE* fout) {
                           "\tmovl\t%%eax, _%s(%%rip)\n", op.op1, op.op2, tac->res->text);
         }
         break;
-        case TAC_IFZ: fprintf(fout, "## TAC_IFZ\n"
-                                    "\tmovl\t_%s(%%rip), %%eax\n"
-                                    "\ttestl\t%%eax, %%eax\n"
-                                    "\tje\t.%s\n", tac->op1->text, tac->res->text);
-            break;
-        case TAC_LABEL: fprintf(fout, "## TAC_LABEL\n"
-                                      ".%s:\n", tac->res->text);
-            break;
-        case TAC_JUMP: fprintf(fout, "## TAC_JUMP\n"
-                                     "\tjmp\t.%s\n", tac->res->text);
-            break;
-        case TAC_EQ:{
-            OPERANDS op = fillOperands(tac->op1, tac->op2);
-            fprintf(fout, "## TAC_EQ ##\n"
-                          "\tmovl\t_%s(%%rip), %%edx\n"
-                          "\tmovl\t_%s(%%rip), %%eax\n"
-                          "\tcmpl\t%%eax, %%edx\n"
-                          "\tsete\t%%al\n"
-                          "\tmovzbl\t%%al, %%eax\n"
-                          "\tmovl\t%%eax, _%s(%%rip)\n", op.op1, op.op2, tac->res->text);
-        }
-            break;
         case TAC_DIF:{
-            OPERANDS op = fillOperands(tac->op1, tac->op2);
+            OPERANDS op = getOperands(tac->op1, tac->op2);
             fprintf(fout, "## TAC_DIF ##\n"
                           "\tmovl\t_%s(%%rip), %%edx\n"
                           "\tmovl\t_%s(%%rip), %%eax\n"
@@ -494,7 +472,7 @@ void generateASM(TAC* tac, FILE* fout) {
         }
             break;
         case TAC_LE:{
-            OPERANDS op = fillOperands(tac->op1, tac->op2);
+            OPERANDS op = getOperands(tac->op1, tac->op2);
             fprintf(fout, "## TAC_LE\n"
                           "\tmovl\t_%s(%%rip), %%edx\n"
                           "\tmovl\t_%s(%%rip), %%eax\n"
@@ -505,7 +483,7 @@ void generateASM(TAC* tac, FILE* fout) {
         }
             break;
         case TAC_GE:{
-            OPERANDS op = fillOperands(tac->op1, tac->op2);
+            OPERANDS op = getOperands(tac->op1, tac->op2);
             fprintf(fout, "## TAC_GE\n"
                           "\tmovl\t_%s(%%rip), %%edx\n"
                           "\tmovl\t_%s(%%rip), %%eax\n"
@@ -527,15 +505,31 @@ void generateASM(TAC* tac, FILE* fout) {
                                     ".%s%d:\n"
                                     "\tmovl\t$0, %%eax\n"
                                     ".%s%d:\n"
-                                    "\tmovl\t%%eax, _%s(%%rip)\n", tac->op1->text,
-                              LOGIC_OP, logicOpCount,
-                              tac->op2->text,
-                              LOGIC_OP, logicOpCount,
-                              LOGIC_OP, logicOpCount+1,
-                              LOGIC_OP, logicOpCount,
-                              LOGIC_OP, logicOpCount+1,
+                                    "\tmovl\t%%eax, _%s(%%rip)\n", tac->op1->text, LOGIC_LABEL, logicOpCount, tac->op2->text, LOGIC_LABEL, logicOpCount, LOGIC_LABEL, logicOpCount+1, LOGIC_LABEL, logicOpCount, LOGIC_LABEL, logicOpCount+1,
                               tac->res->text);
             logicOpCount += 2;
+            break;
+        case TAC_IFZ: fprintf(fout, "## TAC_IFZ\n"
+                                    "\tmovl\t_%s(%%rip), %%eax\n"
+                                    "\ttestl\t%%eax, %%eax\n"
+                                    "\tje\t.%s\n", tac->op1->text, tac->res->text);
+            break;
+        case TAC_LABEL: fprintf(fout, "## TAC_LABEL\n"
+                                      ".%s:\n", tac->res->text);
+            break;
+        case TAC_JUMP: fprintf(fout, "## TAC_JUMP\n"
+                                     "\tjmp\t.%s\n", tac->res->text);
+            break;
+        case TAC_EQ:{
+            OPERANDS op = getOperands(tac->op1, tac->op2);
+            fprintf(fout, "## TAC_EQ ##\n"
+                          "\tmovl\t_%s(%%rip), %%edx\n"
+                          "\tmovl\t_%s(%%rip), %%eax\n"
+                          "\tcmpl\t%%eax, %%edx\n"
+                          "\tsete\t%%al\n"
+                          "\tmovzbl\t%%al, %%eax\n"
+                          "\tmovl\t%%eax, _%s(%%rip)\n", op.op1, op.op2, tac->res->text);
+        }
             break;
         case TAC_OR: fprintf(fout, "## TAC_OR ##\n"
                                    "\tmovl\t_%s(%%rip), %%eax\n"
@@ -550,14 +544,7 @@ void generateASM(TAC* tac, FILE* fout) {
                                    ".%s%d:\n"
                                    "\tmovl\t$0, %%eax\n"
                                    ".%s%d:\n"
-                                   "\tmovl\t%%eax, _%s(%%rip)\n", tac->op1->text,
-                             LOGIC_OP, logicOpCount,
-                             tac->op2->text,
-                             LOGIC_OP, logicOpCount+1,
-                             LOGIC_OP, logicOpCount,
-                             LOGIC_OP, logicOpCount+2,
-                             LOGIC_OP, logicOpCount+1,
-                             LOGIC_OP, logicOpCount+2,
+                                   "\tmovl\t%%eax, _%s(%%rip)\n", tac->op1->text, LOGIC_LABEL, logicOpCount, tac->op2->text, LOGIC_LABEL, logicOpCount+1, LOGIC_LABEL, logicOpCount, LOGIC_LABEL, logicOpCount+2, LOGIC_LABEL, logicOpCount+1, LOGIC_LABEL, logicOpCount+2,
                              tac->res->text);
             logicOpCount += 3;
             break;
@@ -593,32 +580,22 @@ void generateASM(TAC* tac, FILE* fout) {
     }
 
 
-char* findLitValueFullVarName(char* text, const char* varName){
-    int counter = findCounter(text);
-    char* varFullName = (char*)malloc(sizeof(varName) + sizeof(counter));
-    strcpy(varFullName, varName);
-
-    char num[10];
-    sprintf(num, "%d", counter);
-    strcat(varFullName, num);
-
-    return varFullName;
-}
-
-OPERANDS fillOperands(HASH_NODE* op1, HASH_NODE* op2){
+OPERANDS getOperands(HASH_NODE* op1, HASH_NODE* op2){
     OPERANDS op;
-    if(op1->type == SYMBOL_LITCHAR)
-        op.op1 = findLitValueFullVarName(op1->text, LITCHAR_VAR_NAME);
-    else
-        op.op1 = op1->text;
-
-    if(op2->type == SYMBOL_LITCHAR)
-        op.op2 = findLitValueFullVarName(op2->text, LITCHAR_VAR_NAME);
-    else
-        op.op2 = op2->text;
-
+    op.op1 = selectText(SYMBOL_LITCHAR, op1);
+    op.op2 = selectText(SYMBOL_LITCHAR, op2);
     return op;
 }
+
+char* selectText(int type, HASH_NODE* op){
+    if(op->type == type)
+        return getVarName(op->text, CHAR_TEMP);
+    else
+        return op->text;
+}
+
+
+
 
 
 

@@ -91,40 +91,39 @@ HASH_NODE * makeLabel(void) {
     return hashInsert(name, SYMBOL_LABEL);
 }
 
-void generateASMGlobalVariablesFromLitValues(FILE* fout){
-    static int stringCounter = 0;
-
-    fprintf(fout, "\t.section\t.rodata\n"
-                  "LC0:\t.string \"%%d\"\n"
-                  "LC1:\t.string \"%%f\"\n"
-                  "LC2:\t.string \" %%c\"\n"
-                  "TRUE:\t.string \"TRUE\"\n"
-                  "FALSE:\t.string \"FALSE\"\n"
-                  "_TRUE:\t.long 1\n"
-                  "_FALSE:\t.long 0\n");
-
+void generateGlobals(FILE* fout){
+    static int counter = 0;
+    printBoolAndString(fout);
     for(int i = 0; i < HASH_SIZE; i++){
         for(HASH_NODE* node = Table[i]; node; node = node->next){
             if(node){
-                if(node->type == SYMBOL_LITSTRING){
-                    addMatch(node->text, stringCounter);
-                    fprintf(fout, "\t.section\t.rodata\n"
-                                  "%s%d:\t.string\t%s\n", LITSTR_VAR_NAME, stringCounter, node->text);
-                    stringCounter++;
-                }
-                else if(node->type == SYMBOL_LITINT){
-                    fprintf(fout, "\t.section\t.rodata\n"
-                                  "_%s:\t.long\t%s\n", node->text, node->text);
-                }
-                else if(node->type == SYMBOL_LITCHAR){
-                    addMatch(node->text, stringCounter);
-                    fprintf(fout, "\t.section\t.rodata\n"
-                                  "%s%d:\t.long\t%d\n", LITCHAR_VAR_NAME, stringCounter, (int)(node->text[1]));
-                    stringCounter++;
-                }
-                else if(node->type == SYMBOL_TEMP){
-                    fprintf(fout, "\t.data\n"
-                                  "_%s:\t.long\t 0\n", node->text);
+                switch (node->type){
+                    case SYMBOL_LITSTRING: {
+                        addTemp(node->text, counter);
+                        fprintf(fout, "\t.section\t.rodata\n"
+                                      "%s%d:\t.string\t%s\n", STRING_TEMP, counter, node->text);
+                        counter++;
+                    }
+                    break;
+                    case SYMBOL_LITINT: {
+                        fprintf(fout, "\t.section\t.rodata\n"
+                                      "_%s:\t.long\t%s\n", node->text, node->text);
+                    }
+                    break;
+                    case SYMBOL_LITCHAR: {
+                        addTemp(node->text, counter);
+                        fprintf(fout, "\t.section\t.rodata\n"
+                                      "%s%d:\t.long\t%d\n", STRING_TEMP, counter, (int)(node->text[1]));
+                        counter++;
+                    }
+                    break;
+                    case SYMBOL_TEMP: {
+                        fprintf(fout, "\t.data\n"
+                                      "_%s:\t.long\t 0\n", node->text);
+                    }
+                    break;
+                    default:
+                        break;
                 }
             }
         }

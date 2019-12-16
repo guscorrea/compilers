@@ -47,5 +47,8 @@ print "\n Loop! \n";
 x = x + 1;
 };
 
+read x;
+print x;
+
 print "\n Funciona \n";
 }

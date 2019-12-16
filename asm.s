@@ -187,15 +187,15 @@ main:
 ## TAC_AND
 	movl	_f(%rip), %eax
 	testl	%eax, %eax
-	je	.LogicOP0
+	je	.LogicLabel0
 	movl	_b(%rip), %eax
 	testl	%eax, %eax
-	je	.LogicOP0
+	je	.LogicLabel0
 	movl	$1, %eax
-	jmp	.LogicOP1
-.LogicOP0:
+	jmp	.LogicLabel1
+.LogicLabel0:
 	movl	$0, %eax
-.LogicOP1:
+.LogicLabel1:
 	movl	%eax, _Temp6(%rip)
 ## TAC_IFZ
 	movl	_Temp6(%rip), %eax
@@ -216,16 +216,16 @@ main:
 ## TAC_OR ##
 	movl	_f(%rip), %eax
 	testl	%eax, %eax
-	jne	.LogicOP2
+	jne	.LogicLabel2
 	movl	_b(%rip), %eax
 	testl	%eax, %eax
-	je	.LogicOP3
-.LogicOP2:
+	je	.LogicLabel3
+.LogicLabel2:
 	movl	$1, %eax
-	jmp	.LogicOP4
-.LogicOP3:
+	jmp	.LogicLabel4
+.LogicLabel3:
 	movl	$0, %eax
-.LogicOP4:
+.LogicLabel4:
 	movl	%eax, _Temp7(%rip)
 ## TAC_IFZ
 	movl	_Temp7(%rip), %eax
@@ -271,6 +271,17 @@ main:
 	jmp	.Label11
 ## TAC_LABEL
 .Label12:
+## TAC_READ ##
+	leaq	_x(%rip), %rsi
+	leaq	LC0(%rip), %rdi
+	movl	$0, %eax
+	call	__isoc99_scanf@PLT
+## TAC_PRINT_VAR ##
+	movl	_x(%rip), %eax
+	movl	%eax, %esi
+	leaq	LC0(%rip), %rdi
+	movl	$0, %eax
+	call	printf@PLT
 ## TAC_PRINT_LITSTRING ##
 	leaq	STRING8(%rip), %rdi
 	call	printf@PLT
